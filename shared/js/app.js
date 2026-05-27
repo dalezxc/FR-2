@@ -24,17 +24,228 @@ function go(id){
   if(id === 's-trip-request' || id === 's-trip-request-loading') refreshDriverView().catch(err=>toast(err.message,true));
 }
 
+// ── Demo / Mock API layer ─────────────────────────────────────────────────────
+// All state lives in memory so the prototype works without a PHP server.
+
+const _mock = (() => {
+  const PARENT = { id:1, role:'parent', first_name:'Ana', last_name:'Reyes', email:'parent@demo.com', phone:'+639171234567' };
+  const DRIVER_USER = { id:2, role:'driver', first_name:'Sarah', last_name:'Williams', email:'driver@demo.com', phone:'+639181234567' };
+  const GUARD_USER  = { id:4, role:'guard',  first_name:'Jose', last_name:'Santos',   email:'guard@demo.com',  phone:'+639191234567' };
+
+  const CHILDREN = [
+    { id:1, parent_id:1, first_name:'Emma',  last_name:'Reyes', date_of_birth:'2016-03-12', grade_level:'Grade 3', school_name:'Lincoln Elementary School', age:8,  qr_token:'QR-EMMA-001' },
+    { id:2, parent_id:1, first_name:'Noah',  last_name:'Reyes', date_of_birth:'2018-07-04', grade_level:'Grade 1', school_name:'Lincoln Elementary School', age:6,  qr_token:'QR-NOAH-001' },
+  ];
+
+  const DRIVERS = [
+    { id:2, first_name:'Sarah', last_name:'Williams', make:'Honda',  model:'CR-V',        plate_number:'ABC-1234', color:'White',  years_experience:5, rating:'4.9', total_trips:324, safety_score:98, is_online:1 },
+    { id:3, first_name:'Michael',last_name:'Chen',    make:'Toyota', model:'Highlander',  plate_number:'XYZ-5678', color:'Black',  years_experience:4, rating:'4.8', total_trips:289, safety_score:96, is_online:1 },
+    { id:5, first_name:'Lisa',  last_name:'Martinez', make:'Honda',  model:'Pilot',       plate_number:'LMN-9012', color:'Silver', years_experience:6, rating:'5.0', total_trips:412, safety_score:99, is_online:1 },
+  ];
+
+  let _trips = [
+    { id:1, parent_id:1, student_id:1, driver_id:2, trip_type:'home_to_school', status:'in_progress',
+      pickup_address:'123 Oak Street, Apartment 4B', dropoff_address:'Lincoln Elementary School',
+      pickup_time:'07:30', scheduled_date: new Date().toISOString().slice(0,10),
+      student_first_name:'Emma', student_last_name:'Reyes',
+      driver_first_name:'Sarah', driver_last_name:'Williams' }
+  ];
+  let _nextTripId = 10;
+
+  let _notifications = [
+    { id:1, user_id:1, title:'Driver accepted your trip', message:'Sarah Williams has accepted Emma\'s trip request.', type:'trip_accepted', is_read:0, created_at: new Date().toISOString() },
+    { id:2, user_id:1, title:'Child picked up',           message:'Emma Reyes has been picked up safely.',            type:'pickup',       is_read:0, created_at: new Date().toISOString() },
+  ];
+  let _nextNotifId = 10;
+
+  let _scans = [
+    { id:1, student_id:1, guard_id:4, trip_id:1, phase:'school_to_home', result:'verified', scanned_at: new Date().toISOString(), student_name:'Emma Reyes' },
+  ];
+  let _nextScanId = 10;
+
+  function delay(ms = 300){ return new Promise(r => setTimeout(r, ms)); }
+
+  function parentProfile(){ return { ...PARENT, parent_profile:{ address:'123 Oak Street, Apartment 4B', emergency_contact:'+639170001111' } }; }
+  function driverProfile(d = DRIVERS[0]){ return { ...DRIVER_USER, first_name:d.first_name, last_name:d.last_name, driver_profile:{ ...d } }; }
+  function guardProfile(){ return { ...GUARD_USER, guard_profile:{} }; }
+
+  return {
+    // auth.php
+    'auth.php': async (path, options) => {
+      await delay();
+      const body = JSON.parse(options?.body || '{}');
+      if(body.action === 'login'){
+        const e = body.email?.toLowerCase();
+        if(e === 'driver@demo.com' || e === 'driver'){
+          localStorage.setItem('rideguard_driver_id', '2');
+          return { user:{ ...DRIVER_USER, children:[], child:null } };
+        }
+        if(e === 'guard@demo.com' || e === 'guard'){
+          return { user:{ ...GUARD_USER, children:[], child:null } };
+        }
+        // any email → parent login
+        const user = { ...PARENT, children:CHILDREN, child:CHILDREN[0] };
+        return { user };
+      }
+      if(body.action === 'register'){
+        if(body.role === 'driver'){
+          localStorage.setItem('rideguard_driver_id', '2');
+          return { user:{ ...DRIVER_USER, children:[], child:null } };
+        }
+        const newChild = { id:CHILDREN.length+1, parent_id:1, first_name:body.child_first_name||'Child', last_name:body.child_last_name||'Reyes', grade_level:body.child_grade_level||'Grade 1', school_name:body.school_name||'Lincoln Elementary School', age:7, qr_token:'QR-NEW-001' };
+        CHILDREN.push(newChild);
+        const user = { ...PARENT, first_name:body.first_name||PARENT.first_name, last_name:body.last_name||PARENT.last_name, email:body.email||PARENT.email, children:[newChild], child:newChild };
+        return { user, student_id: newChild.id };
+      }
+      throw new Error('Unknown auth action');
+    },
+
+    // students.php
+    'students.php': async (path, options) => {
+      await delay();
+      const method = options?.method || 'GET';
+      if(method === 'GET') return { children: CHILDREN.map(c=>({...c})) };
+      if(method === 'POST'){
+        const body = JSON.parse(options.body);
+        const child = { id: CHILDREN.length+10, parent_id:body.parent_id||1, first_name:body.first_name, last_name:body.last_name, date_of_birth:body.date_of_birth, grade_level:body.grade_level, school_name:body.school_name||'Lincoln Elementary School', age:8, qr_token:`QR-${Date.now()}` };
+        CHILDREN.push(child);
+        return { child };
+      }
+    },
+
+    // drivers.php
+    'drivers.php': async (path, options) => {
+      await delay(200);
+      const method = options?.method || 'GET';
+      if(method === 'PATCH'){
+        const body = JSON.parse(options.body);
+        const d = DRIVERS.find(dr=>dr.id === Number(body.driver_id));
+        if(d) d.is_online = body.is_online;
+        return { ok:true };
+      }
+      return { drivers: DRIVERS.map(d=>({...d})) };
+    },
+
+    // trips.php
+    'trips.php': async (path, options) => {
+      await delay();
+      const method = options?.method || 'GET';
+      if(method === 'GET'){
+        // role=parent or role=driver
+        const trips = _trips.map(t=>({...t}));
+        return { trips };
+      }
+      if(method === 'POST'){
+        const body = JSON.parse(options.body);
+        const driver = DRIVERS.find(d=>d.id===Number(body.driver_id)) || DRIVERS[0];
+        const child  = CHILDREN.find(c=>c.id===Number(body.student_id)) || CHILDREN[0];
+        const trip = {
+          id: _nextTripId++,
+          parent_id: body.parent_id||1,
+          student_id: child.id,
+          driver_id: driver.id,
+          trip_type: body.trip_type||'home_to_school',
+          status:'pending',
+          pickup_address: body.pickup_address||'123 Oak Street, Apartment 4B',
+          dropoff_address: body.dropoff_address||'Lincoln Elementary School',
+          pickup_time: body.pickup_time||'07:30',
+          scheduled_date: body.scheduled_date||new Date().toISOString().slice(0,10),
+          student_first_name: child.first_name, student_last_name: child.last_name,
+          driver_first_name: driver.first_name, driver_last_name: driver.last_name
+        };
+        _trips.push(trip);
+        return { trip_id: trip.id };
+      }
+      if(method === 'PATCH'){
+        const body = JSON.parse(options.body);
+        const trip = _trips.find(t=>t.id===Number(body.trip_id));
+        if(trip){ trip.status = body.status; }
+        // fire a notification for parent on key transitions
+        if(body.status === 'accepted'){
+          _notifications.push({ id:_nextNotifId++, user_id:1, title:'Driver accepted your trip', message:'Your driver is on the way.', type:'trip_accepted', is_read:0, created_at:new Date().toISOString() });
+        }
+        if(body.status === 'completed'){
+          _notifications.push({ id:_nextNotifId++, user_id:1, title:'Child arrived safely', message:'Trip has been completed successfully.', type:'arrival', is_read:0, created_at:new Date().toISOString() });
+        }
+        return { ok:true };
+      }
+    },
+
+    // notifications.php
+    'notifications.php': async (path, options) => {
+      await delay(150);
+      const method = options?.method || 'GET';
+      if(method === 'GET') return { notifications: _notifications.map(n=>({...n})) };
+      if(method === 'POST'){
+        const body = JSON.parse(options.body);
+        _notifications.push({ id:_nextNotifId++, ...body, is_read:0, created_at:new Date().toISOString() });
+        return { ok:true };
+      }
+      if(method === 'PATCH'){
+        const body = JSON.parse(options.body);
+        const n = _notifications.find(n=>n.id===Number(body.notification_id));
+        if(n) n.is_read = 1;
+        return { ok:true };
+      }
+    },
+
+    // profile.php
+    'profile.php': async (path, options) => {
+      await delay(150);
+      const method = options?.method || 'GET';
+      if(method === 'GET'){
+        const url = new URL('http://x/' + path.replace(/^.*profile\.php/, 'profile.php'));
+        const uid = Number(url.searchParams.get('user_id') || 1);
+        if(uid === 2 || uid === 3 || uid === 5){ const d = DRIVERS.find(dr=>dr.id===uid)||DRIVERS[0]; return { profile: driverProfile(d) }; }
+        if(uid === 4) return { profile: guardProfile() };
+        return { profile: parentProfile() };
+      }
+      if(method === 'PATCH'){
+        const body = JSON.parse(options.body);
+        if(body.first_name) PARENT.first_name = body.first_name;
+        if(body.last_name)  PARENT.last_name  = body.last_name;
+        if(body.phone)      PARENT.phone       = body.phone;
+        return { ok:true };
+      }
+    },
+
+    // ratings.php
+    'ratings.php': async (path, options) => {
+      await delay(200);
+      return { ok:true };
+    },
+
+    // scans.php
+    'scans.php': async (path, options) => {
+      await delay(200);
+      const method = options?.method || 'GET';
+      if(method === 'GET') return { scans: _scans.map(s=>({...s})) };
+      if(method === 'POST'){
+        const body = JSON.parse(options.body);
+        const child = CHILDREN.find(c=>c.id===Number(body.student_id));
+        const scan = { id:_nextScanId++, student_id:body.student_id, guard_id:body.guard_id, trip_id:body.trip_id, phase:body.phase, result:body.result||'verified', scanned_at:new Date().toISOString(), student_name: child ? `${child.first_name} ${child.last_name}` : `Student #${body.student_id}` };
+        _scans.unshift(scan);
+        return { ok:true, scan };
+      }
+    },
+
+    // health.php (fallback)
+    'health.php': async () => ({ ok:true }),
+  };
+})();
+
 async function api(path, options = {}){
-  const headers = Object.assign({'Content-Type':'application/json'}, options.headers || {});
-  let res;
-  try {
-    res = await fetch(`${API_BASE}/${path}`, Object.assign({}, options, {headers}));
-  } catch (err) {
-    throw new Error('Cannot reach RideGuard server. Open http://127.0.0.1:8077/ or start the PHP server.');
+  // Strip query string to find the handler key
+  const key = path.split('?')[0];
+  const handler = _mock[key];
+  if(handler){
+    const result = await handler(path, options);
+    if(result === undefined) return { ok:true };
+    return result;
   }
-  const data = await res.json().catch(()=>({ok:false,error:'Invalid server response'}));
-  if(!res.ok || data.ok === false) throw new Error(data.error || 'Request failed');
-  return data;
+  // Unknown endpoint — silently succeed so nothing breaks
+  console.warn('[RideGuard demo] No mock for:', key);
+  return { ok:true };
 }
 
 function getInput(screenId, placeholder){
@@ -248,15 +459,14 @@ async function loginParent(){
   const password = getInput('s-login','Enter your Password');
   if(!email || !password) throw new Error('Enter your email and password');
   const data = await api('auth.php', {method:'POST', body:JSON.stringify({action:'login', email, password})});
+  storeUser(data.user);
   if(data.user.role === 'driver'){
-    storeUser(data.user);
     localStorage.setItem('rideguard_driver_id', String(data.user.id));
     toast(`Welcome, ${data.user.first_name}`);
-    location.href = '../driver/index.html';
+    // In demo mode stay on parent view — driver view is a separate page
+    go('s-dashboard');
     return;
   }
-  if(data.user.role !== 'parent') throw new Error('Use a registered parent or driver account');
-  storeUser(data.user);
   if(data.user.child?.id) localStorage.setItem('rideguard_selected_child_id', String(data.user.child.id));
   await refreshParentView();
   toast(`Welcome, ${data.user.first_name}`);
@@ -268,7 +478,8 @@ function validateEmail(email){
 }
 
 function validatePassword(password){
-  return password.length >= 8 && /[a-z]/.test(password) && /[A-Z]/.test(password) && /\d/.test(password);
+  // Demo mode: accept any password with 6+ chars
+  return password.length >= 6;
 }
 
 function parentRegistrationPayload(){
@@ -327,8 +538,8 @@ async function registerParent(){
   storeUser(data.user);
   if(data.user.role === 'driver'){
     localStorage.setItem('rideguard_driver_id', String(data.user.id));
-    toast('Driver account created');
-    location.href = '../driver/index.html';
+    toast('Driver account created — use the Driver View tab above');
+    go('s-success');
     return;
   }
   localStorage.setItem('rideguard_selected_child_id', String(data.student_id));
@@ -367,7 +578,7 @@ function renderRegistrationStepTwo(){
       <input class="input-field" type="number" min="0" max="60" placeholder="Years of Experience">
       <div style="display:flex;gap:10px;margin-top:8px">
         <button class="btn btn-outline" onclick="go('s-reg1')" style="border-color:var(--blue2);color:var(--blue2)">PREVIOUS</button>
-        <button class="btn btn-blue" onclick="try{ validateRegisterStep(2); go('s-reg3'); }catch(err){ toast(err.message,true); }">NEXT</button>
+        <button class="btn btn-blue" onclick="doRegStep2()">NEXT</button>
       </div>
     </div>
   `;
@@ -1181,38 +1392,68 @@ async function refreshGuardScans(){
 }
 
 
+// ── Named action handlers called directly from onclick ────────────────────────
+
+window.doLogin = async function(){
+  try { await loginParent(); } catch(err){ toast(err.message, true); }
+};
+
+window.doRegStep1 = async function(){
+  try { validateRegisterStep(1); go('s-reg2'); } catch(err){ toast(err.message, true); }
+};
+
+window.doRegStep2 = async function(){
+  try { validateRegisterStep(2); go('s-reg3'); } catch(err){ toast(err.message, true); }
+};
+
+window.doScheduleTrip = async function(){
+  try { await scheduleTrip(); } catch(err){ toast(err.message, true); }
+};
+
+window.doSubmitRating = async function(){
+  try { await submitRating(); } catch(err){ toast(err.message, true); }
+};
+
+window.doDriverQrScan = async function(){
+  try { await scanStudent('driver'); go('s-qr-success'); } catch(err){ toast(err.message, true); }
+};
+
+window.doStartTrip = async function(){
+  try {
+    await updateTrip('in_progress', Number(localStorage.getItem('rideguard_driver_trip_id') || 0));
+    toast('Trip started');
+    go('s-active-trip');
+  } catch(err){ toast(err.message, true); }
+};
+
+window.doDropoffScan = async function(){
+  try {
+    await scanStudent('driver_dropoff');
+    const trips = await loadDriverTrips(activeDriverId());
+    const tripId = Number(localStorage.getItem('rideguard_driver_trip_id') || 0);
+    const trip = trips.find(t=>Number(t.id) === tripId);
+    const nameEl = document.getElementById('dropoffStudentName');
+    if(nameEl && trip) nameEl.textContent = `${trip.student_first_name} ${trip.student_last_name} confirmed at destination`;
+    go('s-qr-dropoff-success');
+  } catch(err){ toast(err.message, true); }
+};
+
+window.doCompleteTrip = async function(){
+  try {
+    await updateTrip('completed', Number(localStorage.getItem('rideguard_driver_trip_id') || 0));
+    toast('Trip completed');
+    go('s-trip-complete');
+  } catch(err){ toast(err.message, true); }
+};
+
+window.doGuardScan = async function(){
+  try { await scanStudent('guard'); go('s-guard-scans'); } catch(err){ toast(err.message, true); }
+};
+
+document.addEventListener('DOMContentLoaded',function(){
   ensureUtilityScreens();
   removeTrackNavItems();
   originalRegisterStepTwo = document.querySelector('#s-reg2 div[style*="overflow-y:auto"]')?.innerHTML || '';
-  bindAction('s-login','Login',loginParent, true);
-  bindAction('s-reg1','Continue',async()=>{ validateRegisterStep(1); go('s-reg2'); }, true);
-  bindAction('s-reg2','NEXT',async()=>{ validateRegisterStep(2); go('s-reg3'); }, true);
-  bindAction('s-confirm-schedule','Confirm',scheduleTrip, true);
-  bindAction('s-rating','Submit Rating',submitRating, true);
-  bindAction('s-qr-scan','Scan QR Code',async()=>{ await scanStudent('driver'); go('s-qr-success'); }, true);
-  bindAction('s-qr-success','Start Trip',async()=>{ await updateTrip('in_progress', Number(localStorage.getItem('rideguard_driver_trip_id') || 0)); toast('Trip started'); go('s-active-trip'); }, true);
-  bindAction('s-active-trip','Complete Drop-off',async()=>{ go('s-qr-scan-dropoff'); }, true);
-  // Drop-off QR scan button
-  const dropoffScanBtn = document.getElementById('dropoffScanBtn');
-  if(dropoffScanBtn) dropoffScanBtn.addEventListener('click', async()=>{
-    try {
-      await scanStudent('driver_dropoff');
-      // Update student name on confirmation screen
-      const trips = await loadDriverTrips(activeDriverId());
-      const tripId = Number(localStorage.getItem('rideguard_driver_trip_id') || 0);
-      const trip = trips.find(t=>Number(t.id) === tripId);
-      const nameEl = document.getElementById('dropoffStudentName');
-      if(nameEl && trip) nameEl.textContent = `${trip.student_first_name} ${trip.student_last_name} confirmed at destination`;
-      go('s-qr-dropoff-success');
-    } catch(err){ toast(err.message, true); }
-  });
-  // Complete trip after drop-off QR verified
-  const completeTripBtn = document.getElementById('completeTripBtn');
-  if(completeTripBtn) completeTripBtn.addEventListener('click', async()=>{
-    try { await updateTrip('completed', Number(localStorage.getItem('rideguard_driver_trip_id') || 0)); toast('Trip completed'); go('s-trip-complete'); }
-    catch(err){ toast(err.message, true); }
-  });
-  bindAction('s-guard-dash','Scan QR Code',async()=>{ await scanStudent('guard'); go('s-guard-scans'); });
   bindDriverSelection();
   bindUtilityNav();
 

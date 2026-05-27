@@ -171,7 +171,7 @@
           <rect x="85" y="57" width="10" height="22" rx="2" fill="rgba(255,255,255,0.35)"/>
         </svg>
       </div>
-      <button class="btn btn-blue" onclick="go('s-qr-success')">Scan QR Code</button>
+      <button class="btn btn-blue" onclick="doDriverQrScan()">Scan QR Code</button>
     </div>
   </div>
   <div class="nav-bar">
@@ -197,7 +197,7 @@
       </div>
       <div style="text-align:center;font-size:15px;font-weight:700;color:var(--green);margin-bottom:4px">QR Verified!</div>
       <div style="text-align:center;font-size:13px;color:var(--text2);margin-bottom:16px">Emma Johnson confirmed</div>
-      <button class="btn btn-blue" onclick="go('s-active-trip')">Start Trip</button>
+      <button class="btn btn-blue" onclick="doStartTrip()">Start Trip</button>
     </div>
   </div>
   <div class="nav-bar">
@@ -269,7 +269,7 @@
           <rect x="85" y="57" width="10" height="22" rx="2" fill="rgba(255,255,255,0.35)"/>
         </svg>
       </div>
-      <button class="btn btn-blue" id="dropoffScanBtn">Scan QR Code</button>
+      <button class="btn btn-blue" id="dropoffScanBtn" onclick="doDropoffScan()">Scan QR Code</button>
     </div>
   </div>
   <div class="nav-bar">
@@ -295,7 +295,7 @@
       </div>
       <div style="text-align:center;font-size:15px;font-weight:700;color:var(--green);margin-bottom:4px">Drop-off Verified!</div>
       <div style="text-align:center;font-size:13px;color:var(--text2);margin-bottom:16px" id="dropoffStudentName">Child confirmed at destination</div>
-      <button class="btn btn-green" id="completeTripBtn">Mark Trip Complete</button>
+      <button class="btn btn-green" id="completeTripBtn" onclick="doCompleteTrip()">Mark Trip Complete</button>
     </div>
   </div>
   <div class="nav-bar">
