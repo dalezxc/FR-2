@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>RideGuard - Driver View</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../shared/css/styles.css">
+</head>
+<body>
+<div id="phone">
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 15: DRIVER DASHBOARD
+═══════════════════════════════════════════════════════════ -->
+<div class="screen active" id="s-driver-dash">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>
+  <div class="scroll-content" style="padding:0 14px">
+    <!-- Status toggle -->
+    <div style="background:linear-gradient(135deg,#29b6d9,#1565C0);border-radius:14px;padding:16px 18px;margin-bottom:14px">
+      <div class="toggle-wrap">
+        <div>
+          <div style="color:#fff;font-size:16px;font-weight:800">Driver Status</div>
+          <div style="color:rgba(255,255,255,0.8);font-size:12px">Toggle to go online and start accepting trips</div>
+        </div>
+        <div class="toggle" id="driverToggle" onclick="toggleDriver()"><div class="toggle-thumb"></div></div>
+      </div>
+    </div>
+    <!-- Stats -->
+    <div style="display:flex;gap:10px;margin-bottom:14px">
+      <div style="flex:1;background:#dcfce7;border-radius:12px;padding:12px 10px;text-align:center"><div style="font-size:11px;color:#065f46;font-weight:600;margin-bottom:4px">Safety Score</div><div style="font-size:18px;font-weight:800;color:#065f46">98%</div></div>
+      <div style="flex:1;background:#dbeafe;border-radius:12px;padding:12px 10px;text-align:center"><div style="font-size:11px;color:var(--blue2);font-weight:600;margin-bottom:4px">Total Trips</div><div style="font-size:18px;font-weight:800;color:var(--blue2)">247</div></div>
+      <div style="flex:1;background:#fef9c3;border-radius:12px;padding:12px 10px;text-align:center"><div style="font-size:11px;color:#854d0e;font-weight:600;margin-bottom:4px">Rating</div><div style="font-size:18px;font-weight:800;color:#854d0e">4.9</div></div>
+    </div>
+    <!-- Vehicle -->
+    <div class="card card-shadow" style="margin-bottom:14px;display:flex;align-items:center;gap:12px">
+      <div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Vehicle Information</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <svg width="28" height="20" viewBox="0 0 50 30" fill="none"><path d="M5 20 H45 L40 10 Q36 4 28 4 H22 Q14 4 10 10 Z" fill="#9ca3af"/><rect x="2" y="18" width="46" height="8" rx="4" fill="#6b7280"/><circle cx="14" cy="26" r="4" fill="#374151"/><circle cx="36" cy="26" r="4" fill="#374151"/></svg>
+          <div><div style="font-size:14px;font-weight:700">Toyota Camry</div><div style="font-size:12px;color:var(--text2)">License Plate: ABC-123</div></div>
+        </div>
+      </div>
+    </div>
+    <!-- Trip schedule -->
+    <div class="card card-shadow">
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px">Trip Requests</div>
+      <div class="rg-muted-state">No pending trip requests.</div>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="go('s-driver-dash')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--blue2)" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="var(--blue2)" stroke-width="2"/></svg><span class="nav-label active">Home</span></div>
+    <div class="nav-item" onclick="openAlerts()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#999" stroke-width="2"/><circle cx="18" cy="4" r="3" fill="#ef4444"/></svg><span class="nav-label">Alerts</span></div>
+    <div class="nav-item" onclick="openProfile()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 16: TRIP REQUEST LOADING
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-trip-request-loading">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>
+  <div class="back-btn" onclick="go('s-driver-dash')">&#8249; Back to Dashboard</div>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px">
+    <div style="background:#b3e5fc;border-radius:20px;padding:40px 30px;text-align:center;width:100%">
+      <div style="width:70px;height:70px;background:rgba(255,255,255,0.5);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#546e7a" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#546e7a" stroke-width="2"/></svg>
+      </div>
+      <div style="font-size:16px;font-weight:700;color:#37474f;margin-bottom:6px">New Trip Request</div>
+      <div style="font-size:13px;color:#546e7a">Loading trip details...</div>
+      <div style="margin-top:20px;display:flex;justify-content:center;gap:6px">
+        <div style="width:8px;height:8px;background:rgba(84,110,122,0.4);border-radius:50%;animation:pulse 1s ease infinite"></div>
+        <div style="width:8px;height:8px;background:rgba(84,110,122,0.4);border-radius:50%;animation:pulse 1s ease .3s infinite"></div>
+        <div style="width:8px;height:8px;background:rgba(84,110,122,0.4);border-radius:50%;animation:pulse 1s ease .6s infinite"></div>
+      </div>
+    </div>
+  </div>
+  <div style="padding:0 18px 20px"><button class="btn btn-blue" onclick="go('s-trip-request')">View Trip Request →</button></div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="go('s-driver-dash')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--blue2)" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="var(--blue2)" stroke-width="2"/></svg><span class="nav-label active">Home</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Alerts</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 17: TRIP REQUEST DETAILS
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-trip-request">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>
+  <div class="back-btn" onclick="go('s-driver-dash')">&#8249; Back to Dashboard</div>
+  <div style="flex:1;padding:14px 18px">
+    <div class="card card-shadow">
+      <div style="font-size:14px;font-weight:700;margin-bottom:14px">Trip Request</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#666" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#666" stroke-width="2"/></svg><div><div style="font-size:12px;color:var(--text2)">Student</div><div style="font-size:14px;font-weight:700">Emma Johnson</div></div></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#666" stroke-width="2"/><path d="M12 6v6l4 2" stroke="#666" stroke-width="2" stroke-linecap="round"/></svg><div><div style="font-size:12px;color:var(--text2)">Scheduled Time</div><div style="font-size:14px;font-weight:700">7:30 AM</div></div></div>
+      <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-bottom:12px">
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px"><div style="width:10px;height:10px;background:#22c55e;border-radius:50%;margin-top:5px;flex-shrink:0"></div><div><div style="font-size:11px;color:var(--text2)">Pickup Location</div><div style="font-size:13px;font-weight:600">123 Oak Street, Apartment 4B</div></div></div>
+        <div style="display:flex;align-items:flex-start;gap:8px"><div style="width:10px;height:10px;background:#ef4444;border-radius:50%;margin-top:5px;flex-shrink:0"></div><div><div style="font-size:11px;color:var(--text2)">Dropoff Location</div><div style="font-size:13px;font-weight:600">Lincoln Elementary School</div></div></div>
+      </div>
+      <div style="display:flex;justify-content:space-around;padding:10px 0;border-top:1px solid #f0f0f0;margin-bottom:14px">
+        <div style="text-align:center"><div style="font-size:12px;color:var(--text2)">Distance</div><div style="font-size:16px;font-weight:700">3.2 miles</div></div>
+        <div style="width:1px;background:#f0f0f0"></div>
+        <div style="text-align:center"><div style="font-size:12px;color:var(--text2)">Duration</div><div style="font-size:16px;font-weight:700">12 min</div></div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-outline" onclick="go('s-driver-dash')" style="padding:13px">Decline</button>
+        <button class="btn btn-blue" onclick="go('s-trip-accepted')" style="padding:13px">Accept Trip</button>
+      </div>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="go('s-driver-dash')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--blue2)" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="var(--blue2)" stroke-width="2"/></svg><span class="nav-label active">Home</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Alerts</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 18: TRIP ACCEPTED
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-trip-accepted">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>
+  <div class="back-btn" onclick="go('s-driver-dash')">&#8249; Back to Dashboard</div>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px">
+    <div class="card card-shadow" style="text-align:center;padding:40px 24px;width:100%">
+      <div style="width:60px;height:60px;background:#dcfce7;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+        <svg width="30" height="30" viewBox="0 0 30 30"><path d="M5 15 L12 22 L25 8" stroke="#22c55e" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:8px">Trip Accepted</div>
+      <div style="font-size:13px;color:var(--text2)">Parent has been notified. Proceeding to QR verification...</div>
+      <button class="btn btn-blue" style="margin-top:24px" onclick="go('s-qr-scan')">Proceed to QR Scan</button>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="go('s-driver-dash')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--blue2)" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="var(--blue2)" stroke-width="2"/></svg><span class="nav-label active">Home</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Alerts</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 19: QR SCAN
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-qr-scan">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>
+  <div class="back-btn" onclick="go('s-trip-accepted')">&#8249; Back to Dashboard</div>
+  <div style="flex:1;padding:14px 18px">
+    <div class="card card-shadow">
+      <div style="font-size:14px;font-weight:700;margin-bottom:6px">Scan Child QR Code</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Please scan the QR code to confirm the student identity before starting the trip.</div>
+      <div class="qr-view" style="margin-bottom:14px">
+        <div class="qr-corner qr-tl"></div><div class="qr-corner qr-tr"></div><div class="qr-corner qr-bl"></div><div class="qr-corner qr-br"></div>
+        <svg width="100" height="100" viewBox="0 0 100 100">
+          <rect x="5" y="5" width="38" height="38" rx="4" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5"/>
+          <rect x="13" y="13" width="22" height="22" rx="2" fill="rgba(255,255,255,0.4)"/>
+          <rect x="57" y="5" width="38" height="38" rx="4" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5"/>
+          <rect x="65" y="13" width="22" height="22" rx="2" fill="rgba(255,255,255,0.4)"/>
+          <rect x="5" y="57" width="38" height="38" rx="4" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5"/>
+          <rect x="13" y="65" width="22" height="22" rx="2" fill="rgba(255,255,255,0.4)"/>
+          <rect x="57" y="57" width="10" height="10" rx="2" fill="rgba(255,255,255,0.35)"/>
+          <rect x="72" y="57" width="10" height="10" rx="2" fill="rgba(255,255,255,0.35)"/>
+          <rect x="57" y="72" width="10" height="10" rx="2" fill="rgba(255,255,255,0.35)"/>
+          <rect x="72" y="72" width="23" height="10" rx="2" fill="rgba(255,255,255,0.35)"/>
+          <rect x="85" y="57" width="10" height="22" rx="2" fill="rgba(255,255,255,0.35)"/>
+        </svg>
+      </div>
+      <button class="btn btn-blue" onclick="go('s-qr-success')">Scan QR Code</button>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="go('s-driver-dash')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--blue2)" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="var(--blue2)" stroke-width="2"/></svg><span class="nav-label active">Home</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Alerts</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 20: QR SUCCESS
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-qr-success">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>
+  <div class="back-btn" onclick="go('s-qr-scan')">&#8249; Back to Dashboard</div>
+  <div style="flex:1;padding:14px 18px">
+    <div class="card card-shadow" style="padding-top:20px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:6px">Scan Child QR Code</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Please scan the QR code to confirm the student identity before starting the trip.</div>
+      <div style="background:#0f172a;border-radius:10px;padding:18px;display:flex;align-items:center;justify-content:center;height:200px;margin-bottom:14px">
+        <svg width="80" height="80" viewBox="0 0 80 80"><circle cx="40" cy="40" r="38" fill="none" stroke="#22c55e" stroke-width="4"/><path d="M20 40 L32 52 L60 24" stroke="#22c55e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </div>
+      <div style="text-align:center;font-size:15px;font-weight:700;color:var(--green);margin-bottom:4px">QR Verified!</div>
+      <div style="text-align:center;font-size:13px;color:var(--text2);margin-bottom:16px">Emma Johnson confirmed</div>
+      <button class="btn btn-blue" onclick="go('s-active-trip')">Start Trip</button>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="go('s-driver-dash')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--blue2)" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="var(--blue2)" stroke-width="2"/></svg><span class="nav-label active">Home</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Alerts</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 21: ACTIVE TRIP (DRIVER)
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-active-trip">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>
+  <div class="back-btn" onclick="go('s-driver-dash')">&#8249; Back to Dashboard</div>
+  <div style="flex:1;padding:14px 18px">
+    <div class="card card-shadow">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <span style="font-size:14px;font-weight:700">Trip In Progress</span>
+        <span class="badge badge-blue">Active</span>
+      </div>
+      <div style="background:#f7f9fc;border-radius:10px;padding:12px;margin-bottom:12px">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Current Destination</div>
+        <div style="font-size:15px;font-weight:700">Lincoln Elementary School</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:12px">
+        <div style="flex:1;background:#f7f9fc;border-radius:10px;padding:12px;text-align:center"><div style="font-size:11px;color:var(--text2)">ETA</div><div style="font-size:18px;font-weight:800">8 min</div></div>
+        <div style="flex:1;background:#f7f9fc;border-radius:10px;padding:12px;text-align:center"><div style="font-size:11px;color:var(--text2)">Distance</div><div style="font-size:18px;font-weight:800">1.8 mi</div></div>
+      </div>
+      <div class="info-box" style="margin-bottom:14px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;margin-top:2px"><path d="M12 2L4 8v4c0 5 3.5 9.7 8 11 4.5-1.3 8-6 8-11V8l-8-6z" fill="var(--blue2)" opacity="0.2" stroke="var(--blue2)" stroke-width="2"/></svg>
+        <div><div style="font-size:12px;font-weight:700;color:var(--blue2)">Real-time GPS tracking is active</div><div style="font-size:11px;color:#5ba3cc">Parent can view your location</div></div>
+      </div>
+      <button class="btn btn-green" onclick="go('s-qr-scan-dropoff')">Complete Drop-off</button>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="go('s-driver-dash')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--blue2)" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="var(--blue2)" stroke-width="2"/></svg><span class="nav-label active">Home</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Alerts</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 21b: DROP-OFF QR SCAN
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-qr-scan-dropoff">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>
+  <div class="back-btn" onclick="go('s-active-trip')">&#8249; Back</div>
+  <div style="flex:1;padding:14px 18px">
+    <div class="card card-shadow">
+      <div style="font-size:14px;font-weight:700;margin-bottom:6px">Scan QR at Drop-off</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Scan the child's QR code to confirm safe arrival at the destination.</div>
+      <div class="qr-view" style="margin-bottom:14px">
+        <div class="qr-corner qr-tl"></div><div class="qr-corner qr-tr"></div><div class="qr-corner qr-bl"></div><div class="qr-corner qr-br"></div>
+        <svg width="100" height="100" viewBox="0 0 100 100">
+          <rect x="5" y="5" width="38" height="38" rx="4" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5"/>
+          <rect x="13" y="13" width="22" height="22" rx="2" fill="rgba(255,255,255,0.4)"/>
+          <rect x="57" y="5" width="38" height="38" rx="4" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5"/>
+          <rect x="65" y="13" width="22" height="22" rx="2" fill="rgba(255,255,255,0.4)"/>
+          <rect x="5" y="57" width="38" height="38" rx="4" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5"/>
+          <rect x="13" y="65" width="22" height="22" rx="2" fill="rgba(255,255,255,0.4)"/>
+          <rect x="57" y="57" width="10" height="10" rx="2" fill="rgba(255,255,255,0.35)"/>
+          <rect x="72" y="57" width="10" height="10" rx="2" fill="rgba(255,255,255,0.35)"/>
+          <rect x="57" y="72" width="10" height="10" rx="2" fill="rgba(255,255,255,0.35)"/>
+          <rect x="72" y="72" width="23" height="10" rx="2" fill="rgba(255,255,255,0.35)"/>
+          <rect x="85" y="57" width="10" height="22" rx="2" fill="rgba(255,255,255,0.35)"/>
+        </svg>
+      </div>
+      <button class="btn btn-blue" id="dropoffScanBtn">Scan QR Code</button>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="go('s-driver-dash')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--blue2)" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="var(--blue2)" stroke-width="2"/></svg><span class="nav-label active">Home</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Alerts</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 21c: DROP-OFF QR SUCCESS
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-qr-dropoff-success">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>
+  <div class="back-btn" onclick="go('s-qr-scan-dropoff')">&#8249; Back</div>
+  <div style="flex:1;padding:14px 18px">
+    <div class="card card-shadow" style="padding-top:20px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:6px">Drop-off QR Confirmed</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:14px">Student identity confirmed at destination.</div>
+      <div style="background:#0f172a;border-radius:10px;padding:18px;display:flex;align-items:center;justify-content:center;height:200px;margin-bottom:14px">
+        <svg width="80" height="80" viewBox="0 0 80 80"><circle cx="40" cy="40" r="38" fill="none" stroke="#22c55e" stroke-width="4"/><path d="M20 40 L32 52 L60 24" stroke="#22c55e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </div>
+      <div style="text-align:center;font-size:15px;font-weight:700;color:var(--green);margin-bottom:4px">Drop-off Verified!</div>
+      <div style="text-align:center;font-size:13px;color:var(--text2);margin-bottom:16px" id="dropoffStudentName">Child confirmed at destination</div>
+      <button class="btn btn-green" id="completeTripBtn">Mark Trip Complete</button>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="go('s-driver-dash')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--blue2)" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="var(--blue2)" stroke-width="2"/></svg><span class="nav-label active">Home</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Alerts</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 22: TRIP COMPLETE (DRIVER)
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-trip-complete">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>
+  <div class="back-btn" onclick="go('s-driver-dash')">&#8249; Back to Dashboard</div>
+  <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px">
+    <div style="background:#b3e5fc;border-radius:20px;padding:40px 28px;text-align:center;width:100%">
+      <div style="width:64px;height:64px;background:#dcfce7;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+        <svg width="32" height="32" viewBox="0 0 32 32"><path d="M6 16 L13 23 L26 10" stroke="#22c55e" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </div>
+      <div style="font-size:16px;font-weight:800;color:#1a3340;margin-bottom:8px">Trip Completed</div>
+      <div style="font-size:13px;color:#37474f;margin-bottom:6px">Successfully delivered Emma Johnson to Lincoln Elementary School</div>
+      <div style="font-size:12px;color:#78909c">Trip has been logged. Returning to dashboard...</div>
+      <button class="btn btn-blue" style="margin-top:28px" onclick="go('s-driver-dash')">Back to Dashboard</button>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="go('s-driver-dash')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--blue2)" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="var(--blue2)" stroke-width="2"/></svg><span class="nav-label active">Home</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Alerts</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+
+</div><!-- /phone -->
+
+<!-- ROLE SWITCHER -->
+<div id="role-switcher">
+  <button class="role-btn parent" onclick="location.href='../parent/index.html'">👨‍👩‍👧 Parent View</button>
+  <button class="role-btn driver" onclick="location.href='../driver/index.html'">🚗 Driver View</button>
+  <button class="role-btn guard" onclick="location.href='../guard/index.html'">🛡️ Guard View</button>
+</div>
+<script src="../shared/js/app.js?v=remove-track-1"></script>
+</body>
+</html>

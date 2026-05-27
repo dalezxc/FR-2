@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>RideGuard - Parent View</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="../shared/css/styles.css">
+</head>
+<body>
+<div id="phone">
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 1: SPLASH
+═══════════════════════════════════════════════════════════ -->
+<div class="screen active" id="s-splash" style="background:var(--blue-grad);min-height:812px">
+  <div class="status-bar">
+    <span class="status-time w">9:41</span>
+    <div class="status-icons">
+      <svg class="sb-icon" viewBox="0 0 18 12"><rect x="0" y="4" width="3.5" height="8" rx="1" fill="#fff"/><rect x="5" y="2.5" width="3.5" height="9.5" rx="1" fill="#fff"/><rect x="10" y="0.5" width="3.5" height="11.5" rx="1" fill="#fff"/><rect x="15" y="5" width="3" height="7" rx="1" fill="rgba(255,255,255,0.4)"/></svg>
+      <svg class="sb-icon" viewBox="0 0 18 12"><path d="M9 2.5C6.2 2.5 3.7 3.7 1.8 5.6L0 3.8C2.3 1.4 5.5 0 9 0s6.7 1.4 9.2 3.8L16.2 5.6C14.3 3.7 11.8 2.5 9 2.5z" fill="#fff"/><path d="M9 6.5c-1.7 0-3.2.7-4.3 1.8L3 6.6C4.5 5 6.6 4 9 4s4.5 1 6 2.6l-1.7 1.7C12.2 7.2 10.7 6.5 9 6.5z" fill="#fff"/><circle cx="9" cy="11" r="1.8" fill="#fff"/></svg>
+      <svg width="28" height="13" viewBox="0 0 28 13"><rect x="0" y="1.5" width="24" height="10" rx="3" stroke="#fff" stroke-width="1.5" fill="none"/><rect x="25" y="4.5" width="3" height="4" rx="1.5" fill="#fff"/><rect x="2" y="3" width="18" height="7" rx="2" fill="#fff"/></svg>
+    </div>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 40px">
+    <!-- LOGO SVG -->
+    <svg width="130" height="130" viewBox="0 0 130 130" style="margin-bottom:28px" class="pulse">
+      <circle cx="65" cy="65" r="60" fill="rgba(255,255,255,0.15)"/>
+      <ellipse cx="65" cy="65" rx="50" ry="50" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+      <!-- Shield -->
+      <path d="M65 18 Q88 28 96 50 Q104 72 96 90 L65 108 L34 90 Q26 72 34 50 Q42 28 65 18Z" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.7)" stroke-width="2"/>
+      <!-- Road -->
+      <path d="M50 95 Q58 70 65 50 Q72 70 80 95" fill="rgba(255,255,255,0.7)"/>
+      <line x1="65" y1="55" x2="65" y2="90" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-dasharray="4 3"/>
+      <!-- Arrow up -->
+      <path d="M55 65 L65 38 L75 65" fill="white"/>
+      <!-- Wing -->
+      <path d="M65 50 Q85 45 95 55" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="3" stroke-linecap="round"/>
+    </svg>
+    <div style="font-size:34px;font-weight:900;color:#fff;letter-spacing:2px;margin-bottom:90px;text-shadow:0 2px 12px rgba(0,0,0,0.15)">RIDEGUARD</div>
+    <div style="width:100%;display:flex;flex-direction:column;gap:14px">
+      <button class="btn" style="background:#fff;color:var(--blue2);font-size:16px;font-weight:800;letter-spacing:1px" onclick="go('s-login')">LOGIN</button>
+      <p style="text-align:center;color:rgba(255,255,255,0.9);font-size:14px">Don't Have an Account? <span style="text-decoration:underline;font-weight:700;cursor:pointer;color:#fff" onclick="go('s-reg1')">Sign Up</span></p>
+    </div>
+  </div>
+  <div class="home-bar" style="background:transparent"><div class="home-indicator" style="background:rgba(255,255,255,0.5)"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 2: LOGIN
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-login">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"><svg class="sb-icon" viewBox="0 0 18 12"><rect x="0" y="4" width="3.5" height="8" rx="1" fill="#111"/><rect x="5" y="2.5" width="3.5" height="9.5" rx="1" fill="#111"/><rect x="10" y="0.5" width="3.5" height="11.5" rx="1" fill="#111"/><rect x="15" y="5" width="3" height="7" rx="1" fill="#ccc"/></svg><svg class="sb-icon" viewBox="0 0 18 12"><path d="M9 2.5C6.2 2.5 3.7 3.7 1.8 5.6L0 3.8C2.3 1.4 5.5 0 9 0s6.7 1.4 9.2 3.8L16.2 5.6C14.3 3.7 11.8 2.5 9 2.5z" fill="#111"/><path d="M9 6.5c-1.7 0-3.2.7-4.3 1.8L3 6.6C4.5 5 6.6 4 9 4s4.5 1 6 2.6l-1.7 1.7C12.2 7.2 10.7 6.5 9 6.5z" fill="#111"/><circle cx="9" cy="11" r="1.8" fill="#111"/></svg><svg width="28" height="13" viewBox="0 0 28 13"><rect x="0" y="1.5" width="24" height="10" rx="3" stroke="#111" stroke-width="1.5" fill="none"/><rect x="25" y="4.5" width="3" height="4" rx="1.5" fill="#111"/><rect x="2" y="3" width="18" height="7" rx="2" fill="#111"/></svg></div></div>
+  <div class="back-btn" onclick="go('s-splash')">&#8249; Back</div>
+  <div style="flex:1;padding:0 24px;display:flex;flex-direction:column;align-items:center">
+    <svg width="70" height="70" viewBox="0 0 100 100" style="margin:10px 0 14px">
+      <circle cx="50" cy="50" r="48" fill="none" stroke="#1565C0" stroke-width="3"/>
+      <path d="M50 10 Q70 20 78 42 Q86 62 78 78 L50 92 L22 78 Q14 62 22 42 Q30 20 50 10Z" fill="#dbeafe" stroke="#2196F3" stroke-width="2"/>
+      <path d="M37 52 L50 24 L63 52" fill="#2196F3"/>
+      <path d="M38 54 Q50 60 62 54" fill="none" stroke="#2196F3" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>
+    <h2 style="font-size:22px;font-weight:800;color:var(--blue2);margin-bottom:4px">LOGIN</h2>
+    <p style="font-size:13px;color:var(--blue);margin-bottom:24px">Sign in to manage your child's trips</p>
+    <div style="width:100%;display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label class="input-label">Email Address</label>
+        <input class="input-field" type="email" placeholder="parent@example.com">
+      </div>
+      <div>
+        <label class="input-label">Password</label>
+        <input class="input-field" type="password" placeholder="Enter your Password">
+        <div style="text-align:right;margin-top:6px"><span style="font-size:13px;color:var(--blue2);cursor:pointer;font-weight:600">Forgot Password?</span></div>
+      </div>
+      <button class="btn btn-blue" onclick="go('s-dashboard')">Login</button>
+      <p style="text-align:center;font-size:13px;color:var(--blue2)">Don't Have an Account? <span style="text-decoration:underline;font-weight:700;cursor:pointer" onclick="go('s-reg1')">Sign Up</span></p>
+    </div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 3: REGISTER STEP 1
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-reg1">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"><svg class="sb-icon" viewBox="0 0 18 12"><rect x="0" y="4" width="3.5" height="8" rx="1" fill="#111"/><rect x="5" y="2.5" width="3.5" height="9.5" rx="1" fill="#111"/><rect x="10" y="0.5" width="3.5" height="11.5" rx="1" fill="#111"/></svg></div></div>
+  <div class="back-btn" onclick="go('s-splash')">&#8249; Back</div>
+  <div style="flex:1;overflow-y:auto;padding:0 24px">
+    <div style="text-align:center;margin-bottom:16px">
+      <svg width="70" height="70" viewBox="0 0 100 100" style="margin-bottom:10px">
+        <circle cx="50" cy="50" r="48" fill="none" stroke="#1565C0" stroke-width="3"/>
+        <path d="M50 10 Q70 20 78 42 Q86 62 78 78 L50 92 L22 78 Q14 62 22 42 Q30 20 50 10Z" fill="#dbeafe" stroke="#2196F3" stroke-width="2"/>
+        <path d="M37 52 L50 24 L63 52" fill="#2196F3"/>
+      </svg>
+      <h2 style="font-size:20px;font-weight:800;color:var(--blue2)">Create Parent Account</h2>
+      <p style="font-size:13px;color:var(--blue2);margin-top:4px">Step 1 of 3</p>
+    </div>
+    <div class="step-bar"><div class="step-seg done"></div><div class="step-seg"></div><div class="step-seg"></div></div>
+    <p style="font-size:13px;color:var(--blue2);font-weight:600;margin-bottom:14px">Input Personal Details</p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <input class="input-field" type="text" placeholder="First Name">
+      <input class="input-field" type="text" placeholder="Last Name">
+      <input class="input-field" type="email" placeholder="Email Address">
+      <div style="display:flex;border:1.5px solid #ccc;border-radius:12px;overflow:hidden;background:#fff">
+        <div style="padding:14px 12px;display:flex;align-items:center;gap:6px;border-right:1px solid #e0e0e0">
+          <span style="font-size:18px">🇵🇭</span>
+          <span style="font-size:13px;color:#555">v</span>
+          <span style="font-size:14px;font-weight:600;color:#333">+63</span>
+        </div>
+        <input style="flex:1;border:none;outline:none;padding:14px;font-size:15px;color:var(--text)" placeholder="Your phone number">
+      </div>
+      <div style="display:flex;gap:0;background:#f0f4f8;border-radius:12px;padding:4px;margin-top:4px" id="roleSelector">
+        <button onclick="selectRole(this,'Parent')" class="role-toggle active" style="flex:1;padding:10px;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;background:var(--blue2);color:#fff;font-family:inherit;transition:all .2s">👨‍👩‍👧 Parent</button>
+        <button onclick="selectRole(this,'Driver')" class="role-toggle" style="flex:1;padding:10px;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;background:transparent;color:var(--text2);font-family:inherit;transition:all .2s">🚗 Driver</button>
+      </div>
+      <button class="btn btn-blue" onclick="go('s-reg2')">Continue</button>
+    </div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 4: REGISTER STEP 2 — CHILD INFO
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-reg2">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="back-btn" onclick="go('s-reg1')">&#8249; Back</div>
+  <div style="flex:1;overflow-y:auto;padding:0 24px">
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-size:72px;margin-bottom:6px">🧒</div>
+      <h2 style="font-size:20px;font-weight:800;color:var(--blue2)">Enter your Child's<br>Information</h2>
+      <p style="font-size:13px;color:var(--blue2);margin-top:4px">Step 2 of 3</p>
+    </div>
+    <div class="step-bar"><div class="step-seg done"></div><div class="step-seg done"></div><div class="step-seg"></div></div>
+    <p style="font-size:13px;color:var(--blue2);font-weight:600;margin-bottom:14px">Add Child's Information</p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <input class="input-field" placeholder="Child's First Name">
+      <input class="input-field" placeholder="Child's Last Name">
+      <input class="input-field" type="date" placeholder="Date of Birth">
+      <input class="input-field" placeholder="Grade Level">
+      <input class="input-field" placeholder="School">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px;background:#f0f8ff;border-radius:10px">
+        <span style="font-size:24px">👦</span>
+        <p style="font-size:12px;color:var(--blue2)">You can add more children later from your dashboard.</p>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="btn btn-outline" onclick="go('s-reg1')" style="border-color:var(--blue2);color:var(--blue2)">PREVIOUS</button>
+        <button class="btn btn-blue" onclick="go('s-reg3')">NEXT</button>
+      </div>
+    </div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 5: REGISTER STEP 3 — PASSWORD
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-reg3">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="back-btn" onclick="go('s-reg2')">&#8249; Back</div>
+  <div style="flex:1;overflow-y:auto;padding:0 24px">
+    <div style="text-align:center;margin-bottom:12px">
+      <svg width="80" height="80" viewBox="0 0 80 80" style="margin-bottom:8px">
+        <rect x="14" y="36" width="52" height="36" rx="8" fill="var(--blue2)"/>
+        <path d="M24 36 V26 C24 14 56 14 56 26 V36" fill="none" stroke="var(--blue2)" stroke-width="7" stroke-linecap="round"/>
+        <circle cx="40" cy="54" r="5" fill="white"/>
+      </svg>
+      <h2 style="font-size:20px;font-weight:800;color:var(--blue2)">Set Your Password</h2>
+      <p style="font-size:13px;color:var(--blue2);margin-top:4px">Step 3 of 3</p>
+    </div>
+    <div class="step-bar"><div class="step-seg done"></div><div class="step-seg done"></div><div class="step-seg done"></div></div>
+    <p style="font-size:13px;color:var(--blue2);font-weight:600;margin-bottom:14px">Create Account Password</p>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label class="input-label">Password</label>
+        <input class="input-field" type="password" placeholder="Create a sure password">
+      </div>
+      <div>
+        <label class="input-label">Confirm Password</label>
+        <input class="input-field" type="password" placeholder="Re-enter password">
+      </div>
+      <div style="font-size:13px;color:#555;line-height:1.8">
+        <div>✓ At least 8 characters</div>
+        <div>✓ Include uppercase and lowercase letters</div>
+        <div>✓ Include at least one number</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-outline" onclick="go('s-reg2')" style="border-color:var(--blue2);color:var(--blue2)">PREVIOUS</button>
+        <button class="btn btn-blue" onclick="completeSignUp(event)">Complete Sign Up</button>
+      </div>
+    </div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     REMOVED REGISTRATION VERIFICATION STEP
+═══════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 7: SUCCESS
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-success">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="back-btn" onclick="go('s-reg3')">&#8249; Back</div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 24px">
+    <div class="check-circle">
+      <svg width="60" height="60" viewBox="0 0 60 60"><path d="M12 30 L24 42 L48 18" stroke="#2196F3" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+    </div>
+    <h2 style="font-size:22px;font-weight:800;color:var(--blue2);text-align:center;line-height:1.3">Parent Account<br>Created Successfully!</h2>
+    <div style="margin-top:60px;width:100%">
+      <button class="btn btn-blue" onclick="go('s-login')">Go to Login</button>
+    </div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 8: PARENT DASHBOARD
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-dashboard">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"><svg class="sb-icon" viewBox="0 0 18 12"><rect x="0" y="4" width="3.5" height="8" rx="1" fill="#111"/><rect x="5" y="2.5" width="3.5" height="9.5" rx="1" fill="#111"/><rect x="10" y="0.5" width="3.5" height="11.5" rx="1" fill="#111"/><rect x="15" y="5" width="3" height="7" rx="1" fill="#ccc"/></svg><svg class="sb-icon" viewBox="0 0 18 12"><path d="M9 2.5C6.2 2.5 3.7 3.7 1.8 5.6L0 3.8C2.3 1.4 5.5 0 9 0s6.7 1.4 9.2 3.8L16.2 5.6C14.3 3.7 11.8 2.5 9 2.5z" fill="#111"/><path d="M9 6.5c-1.7 0-3.2.7-4.3 1.8L3 6.6C4.5 5 6.6 4 9 4s4.5 1 6 2.6l-1.7 1.7C12.2 7.2 10.7 6.5 9 6.5z" fill="#111"/><circle cx="9" cy="11" r="1.8" fill="#111"/></svg><svg width="28" height="13" viewBox="0 0 28 13"><rect x="0" y="1.5" width="24" height="10" rx="3" stroke="#111" stroke-width="1.5" fill="none"/><rect x="25" y="4.5" width="3" height="4" rx="1.5" fill="#111"/><rect x="2" y="3" width="18" height="7" rx="2" fill="#111"/></svg></div></div>
+  <div class="app-header">
+    <svg width="32" height="32" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M50 10 Q70 20 78 42 Q86 62 78 78 L50 92 L22 78 Q14 62 22 42 Q30 20 50 10Z" fill="none" stroke="#2196F3" stroke-width="4"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg>
+    <span class="app-name">RIDEGUARD</span>
+  </div>
+  <div class="scroll-content" style="padding:0 14px">
+    <!-- Welcome banner -->
+    <div style="background:linear-gradient(135deg,#29b6d9,#1565C0);border-radius:14px;padding:16px 18px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="color:#fff;font-size:17px;font-weight:700">Welcome back,</div>
+        <div style="color:#fff;font-size:17px;font-weight:700">Parent Ann!</div>
+      </div>
+      <div style="width:38px;height:38px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#fff" stroke-width="2"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="2"/><circle cx="18" cy="4" r="3" fill="#ef4444"/></svg>
+      </div>
+    </div>
+
+    <!-- Active Trips -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <span style="font-size:15px;font-weight:600;color:var(--text)">Active Trips</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="var(--blue2)" stroke-width="2"/><path d="M12 8v4l3 3" stroke="var(--blue2)" stroke-width="2" stroke-linecap="round"/></svg>
+    </div>
+    <div class="card card-shadow" style="border-color:#bbf7d0;margin-bottom:14px">
+      <div style="font-size:15px;font-weight:700;color:var(--text)">Emma Johnson</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:2px">Home to School</div>
+      <div style="font-size:13px;color:var(--text2)">Driver: Sarah Williams</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px">ETA: 15 min</div>
+      <button class="btn btn-green" onclick="go('s-trip-monitor')">Monitor Trip</button>
+    </div>
+
+    <!-- My Children -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <span style="font-size:15px;font-weight:600;color:var(--text)">My Children</span>
+      <span style="font-size:12px;color:var(--blue2);background:var(--blue-light);padding:4px 10px;border-radius:20px;cursor:pointer">+ Add Children</span>
+    </div>
+    <div class="card card-shadow" style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:15px;font-weight:700">Emma Johnson</div>
+          <div style="font-size:13px;color:var(--text2)">Age 8</div>
+          <div style="font-size:13px;color:var(--text2)">Maple Elementary</div>
+        </div>
+        <div style="width:40px;height:40px;background:#f3e8ff;border-radius:50%;display:flex;align-items:center;justify-content:center">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#7c3aed" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#7c3aed" stroke-width="2"/></svg>
+        </div>
+      </div>
+      <button class="btn btn-blue" style="margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px" onclick="go('s-schedule')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="#fff" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="#fff" stroke-width="2"/><line x1="8" y1="2" x2="8" y2="6" stroke="#fff" stroke-width="2"/><line x1="3" y1="10" x2="21" y2="10" stroke="#fff" stroke-width="2"/></svg>
+        Schedule Trip
+      </button>
+    </div>
+
+    <!-- Upcoming Trips -->
+    <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:10px">Upcoming Trips</div>
+    <div class="card card-shadow" style="margin-bottom:14px">
+      <div style="display:flex;gap:14px;align-items:center">
+        <div style="width:40px;height:40px;background:var(--blue-light);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="var(--blue2)" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="var(--blue2)" stroke-width="2"/><line x1="8" y1="2" x2="8" y2="6" stroke="var(--blue2)" stroke-width="2"/><line x1="3" y1="10" x2="21" y2="10" stroke="var(--blue2)" stroke-width="2"/></svg>
+        </div>
+        <div>
+          <div style="font-size:14px;font-weight:700">Noah Johnson</div>
+          <div style="font-size:12px;color:var(--text2)">School to Home</div>
+          <div style="display:flex;gap:16px;margin-top:3px">
+            <span style="font-size:12px;color:var(--text2)">2:30 PM</span>
+            <span style="font-size:12px;color:var(--text2)">Driver: Michael Chen</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <div class="nav-item" onclick="go('s-dashboard')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--blue2)" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="var(--blue2)" stroke-width="2"/></svg>
+      <span class="nav-label active">Home</span>
+    </div>
+    <div class="nav-item" onclick="go('s-trip-monitor')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#999" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="#999"/></svg>
+      <span class="nav-label">Track</span>
+    </div>
+    <div class="nav-item" onclick="openAlerts()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#999" stroke-width="2"/></svg>
+      <span class="nav-label">Alerts</span>
+    </div>
+    <div class="nav-item" onclick="openProfile()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg>
+      <span class="nav-label">Profile</span>
+    </div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 9: TRIP MONITOR (PARENT)
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-trip-monitor">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="app-header">
+    <svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg>
+    <span class="app-name">RIDEGUARD</span>
+  </div>
+  <div class="back-btn" onclick="go('s-dashboard')">&#8249; Back to Dashboard</div>
+  <div class="divider"></div>
+
+  <!-- MAP -->
+  <div class="map-area">
+    <svg width="100%" height="100%" viewBox="0 0 375 200">
+      <rect width="375" height="200" fill="#e8f0f7"/>
+      <!-- Grid roads -->
+      <line x1="0" y1="100" x2="375" y2="100" stroke="#fff" stroke-width="18"/>
+      <line x1="180" y1="0" x2="180" y2="200" stroke="#fff" stroke-width="14"/>
+      <line x1="80" y1="0" x2="80" y2="200" stroke="#fff" stroke-width="10"/>
+      <line x1="290" y1="0" x2="290" y2="200" stroke="#fff" stroke-width="10"/>
+      <line x1="0" y1="50" x2="375" y2="50" stroke="#fff" stroke-width="10"/>
+      <line x1="0" y1="150" x2="375" y2="150" stroke="#fff" stroke-width="10"/>
+      <!-- Blocks -->
+      <rect x="90" y="60" width="80" height="32" rx="4" fill="#d4e8f0" opacity="0.6"/>
+      <rect x="200" y="60" width="80" height="32" rx="4" fill="#d4e8f0" opacity="0.6"/>
+      <rect x="90" y="110" width="80" height="32" rx="4" fill="#d4e8f0" opacity="0.6"/>
+      <!-- Route line -->
+      <path d="M80 160 Q120 160 140 100 Q160 50 180 50" stroke="#2196F3" stroke-width="4" fill="none" stroke-dasharray="8 4"/>
+      <!-- Vehicle dot -->
+      <circle cx="140" cy="100" r="10" fill="#2196F3"/>
+      <circle cx="140" cy="100" r="6" fill="white"/>
+      <circle cx="140" cy="100" r="3" fill="#2196F3"/>
+      <!-- School pin -->
+      <ellipse cx="82" cy="162" rx="8" ry="4" fill="rgba(0,0,0,0.1)"/>
+      <path d="M82 140 Q82 162 82 162" stroke="#ef4444" stroke-width="2"/>
+      <circle cx="82" cy="136" r="12" fill="#ef4444"/>
+      <text x="82" y="140" text-anchor="middle" font-size="10" fill="white">🏫</text>
+      <!-- Label -->
+      <rect x="200" y="115" width="140" height="22" rx="11" fill="white" opacity="0.95"/>
+      <text x="270" y="130" text-anchor="middle" font-size="11" fill="#333" font-weight="600">Marco Polo Plaza Cebu</text>
+    </svg>
+  </div>
+
+  <div class="scroll-content" style="padding:12px 14px">
+    <!-- Trip status -->
+    <div class="card card-shadow" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-size:14px;font-weight:600">Trip Status</span>
+        <span class="badge badge-green" style="font-size:12px;padding:4px 12px">In Progress</span>
+      </div>
+      <div style="display:flex;gap:12px">
+        <div style="flex:1;display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;background:var(--blue-light);border-radius:50%;display:flex;align-items:center;justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="var(--blue2)" stroke-width="2"/><path d="M12 6v6l4 2" stroke="var(--blue2)" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <div><div style="font-size:11px;color:var(--text2)">ETA</div><div style="font-size:16px;font-weight:700">15 min</div></div>
+        </div>
+        <div style="flex:1;display:flex;align-items:center;gap:10px">
+          <div style="width:36px;height:36px;background:#fdf0e8;border-radius:50%;display:flex;align-items:center;justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><line x1="12" y1="2" x2="12" y2="22" stroke="#f59e0b" stroke-width="2"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="#f59e0b" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <div><div style="font-size:11px;color:var(--text2)">Distance</div><div style="font-size:16px;font-weight:700">2.3 miles</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Driver info -->
+    <div class="card card-shadow" style="margin-bottom:10px">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Driver Information</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="driver-avatar" style="background:#e0e8ff;color:var(--blue2)">S</div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700">Sarah Williams</div>
+          <div style="font-size:12px;color:var(--text2)">Honda CR-V · ABC-1234</div>
+          <div style="font-size:12px;color:#f59e0b">★ 4.9 <span style="color:var(--text2)">(324 trips)</span></div>
+        </div>
+        <div style="width:36px;height:36px;background:var(--blue-light);border-radius:50%;display:flex;align-items:center;justify-content:center">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.93 19.79 19.79 0 010 1.35a2 2 0 012-2.18h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 6.91a16 16 0 006.29 6.29l.44-.44a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z" stroke="var(--blue2)" stroke-width="2"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Safety -->
+    <div style="background:#e8faf5;border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:12px;color:#065f46">AI Safety Stats</div>
+      <div style="display:flex;justify-content:space-around">
+        <div style="text-align:center"><div style="font-size:12px;color:#555">Safe Speed</div><div style="font-size:15px;font-weight:700;color:#065f46">35 mph</div></div>
+        <div style="text-align:center"><div style="font-size:12px;color:#555">Smooth Driving</div><div style="font-size:15px;font-weight:700;color:var(--green)">Excellent</div></div>
+        <div style="text-align:center"><div style="font-size:12px;color:#555">Route Safety</div><div style="font-size:15px;font-weight:700;color:var(--green)">98%</div></div>
+      </div>
+    </div>
+
+    <div class="info-box" style="background:#eff8ff;border-color:#bfdbfe">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10" stroke="var(--blue2)" stroke-width="2"/><line x1="12" y1="8" x2="12" y2="12" stroke="var(--blue2)" stroke-width="2"/><line x1="12" y1="16" x2="12.01" y2="16" stroke="var(--blue2)" stroke-width="2.5" stroke-linecap="round"/></svg>
+      <p style="font-size:13px;color:var(--blue2)">You will be notified when your child arrives safely. Trip completion is confirmed by the driver.</p>
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <div class="nav-item" onclick="go('s-dashboard')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="#999" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Home</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="var(--blue2)" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="var(--blue2)"/></svg><span class="nav-label active">Track</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Alerts</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 10: RATING
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-rating">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>
+  <div class="back-btn" onclick="go('s-dashboard')">&#8249; Back to Dashboard</div>
+  <div class="divider"></div>
+  <div style="flex:1;padding:24px 18px">
+    <div style="font-size:16px;font-weight:700;margin-bottom:6px">Rate Your Trip</div>
+    <div style="font-size:14px;color:var(--text2);margin-bottom:20px">How was your experience with Sarah Williams?</div>
+    <div class="stars" id="starRow">
+      <span class="star" onclick="rate(1)">★</span>
+      <span class="star" onclick="rate(2)">★</span>
+      <span class="star" onclick="rate(3)">★</span>
+      <span class="star" onclick="rate(4)">★</span>
+      <span class="star" onclick="rate(5)">★</span>
+    </div>
+    <div id="ratingLabel" style="text-align:center;font-size:15px;font-weight:700;color:var(--blue2);min-height:22px;margin-bottom:8px"></div>
+    <div style="font-size:14px;font-weight:600;margin-bottom:8px;margin-top:20px">Additional Feedback (Optional)</div>
+    <textarea style="width:100%;height:110px;border:1.5px solid #e0e0e0;border-radius:12px;padding:14px;font-size:14px;resize:none;outline:none;font-family:inherit" placeholder="Share your experience..."></textarea>
+    <button class="btn btn-blue" style="margin-top:16px" onclick="go('s-dashboard')">Submit Rating</button>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="go('s-dashboard')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--blue2)" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="var(--blue2)" stroke-width="2"/></svg><span class="nav-label active">Home</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#999" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="#999"/></svg><span class="nav-label">Track</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Alerts</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 11: SCHEDULE TRIP
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-schedule">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>
+  <div class="back-btn" onclick="go('s-dashboard')">&#8249; Back to Dashboard</div>
+  <div class="divider"></div>
+  <div style="flex:1;padding:20px 18px">
+    <h2 style="font-size:22px;font-weight:800;color:var(--blue2);margin-bottom:4px">Schedule Trip</h2>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:24px">for Emma Johnson</p>
+    <p style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:12px">Select Trip Type</p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card" style="display:flex;align-items:center;gap:14px;cursor:pointer" onclick="go('s-select-driver')">
+        <div style="width:42px;height:42px;background:#dbeafe;border-radius:50%;display:flex;align-items:center;justify-content:center">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="var(--blue2)" stroke-width="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" stroke="var(--blue2)" stroke-width="2"/></svg>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700">Home to School</div>
+          <div style="font-size:12px;color:var(--text2)">Schedule a recurring morning trip</div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;align-items:center;gap:14px;cursor:pointer" onclick="go('s-select-driver')">
+        <div style="width:42px;height:42px;background:#f3e8ff;border-radius:50%;display:flex;align-items:center;justify-content:center">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="#7c3aed" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="#7c3aed" stroke-width="2"/></svg>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700">School to Home</div>
+          <div style="font-size:12px;color:var(--text2)">Schedule pickup after school</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="go('s-dashboard')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--blue2)" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="var(--blue2)" stroke-width="2"/></svg><span class="nav-label active">Home</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#999" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="#999"/></svg><span class="nav-label">Track</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Alerts</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 12: SELECT DRIVER
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-select-driver">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>
+  <div class="back-btn" onclick="go('s-schedule')">&#8249; Back to Dashboard</div>
+  <div class="divider"></div>
+  <div class="scroll-content" style="padding:14px 14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div><div style="font-size:16px;font-weight:800">Select a Driver</div><div style="font-size:13px;color:var(--text2)">Home to School</div></div>
+      <span style="color:var(--blue2);font-size:14px;font-weight:600;cursor:pointer">Change</span>
+    </div>
+    <div style="margin-top:14px">
+      <div class="driver-card"><div style="display:flex;align-items:flex-start;gap:12px"><div class="driver-avatar">S</div><div style="flex:1"><div style="display:flex;justify-content:space-between"><span style="font-size:15px;font-weight:700">Sarah Williams</span><span style="background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px">98</span></div><div style="font-size:12px;color:var(--text2)">Honda CR-V</div><div style="font-size:12px;color:#f59e0b;margin-top:4px">★ 4.9 <span style="color:var(--text2)">324 trips · 5 years</span></div></div></div><button class="btn btn-blue" style="margin-top:10px;padding:11px;font-size:13px" onclick="go('s-confirm-schedule')">Select Driver</button></div>
+      <div class="driver-card"><div style="display:flex;align-items:flex-start;gap:12px"><div class="driver-avatar">M</div><div style="flex:1"><div style="display:flex;justify-content:space-between"><span style="font-size:15px;font-weight:700">Michael Chen</span><span style="background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px">96</span></div><div style="font-size:12px;color:var(--text2)">Toyota Highlander</div><div style="font-size:12px;color:#f59e0b;margin-top:4px">★ 4.8 <span style="color:var(--text2)">289 trips · 4 years</span></div></div></div><button class="btn btn-blue" style="margin-top:10px;padding:11px;font-size:13px" onclick="go('s-confirm-schedule')">Select Driver</button></div>
+      <div class="driver-card"><div style="display:flex;align-items:flex-start;gap:12px"><div class="driver-avatar">L</div><div style="flex:1"><div style="display:flex;justify-content:space-between"><span style="font-size:15px;font-weight:700">Lisa Martinez</span><span style="background:#dcfce7;color:#15803d;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px">99</span></div><div style="font-size:12px;color:var(--text2)">Honda Pilot</div><div style="font-size:12px;color:#f59e0b;margin-top:4px">★ 5.0 <span style="color:var(--text2)">412 trips · 6 years</span></div></div></div><button class="btn btn-blue" style="margin-top:10px;padding:11px;font-size:13px" onclick="go('s-confirm-schedule')">Select Driver</button></div>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="go('s-dashboard')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--blue2)" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="var(--blue2)" stroke-width="2"/></svg><span class="nav-label active">Home</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Track</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Alerts</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 13: CONFIRM SCHEDULE
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-confirm-schedule">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>
+  <div class="back-btn" onclick="go('s-select-driver')">&#8249; Back to Dashboard</div>
+  <div class="divider"></div>
+  <div style="flex:1;padding:16px 18px">
+    <div class="card card-shadow" style="margin-bottom:14px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:14px">Confirm Schedule</div>
+      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0"><span style="font-size:14px;color:var(--text2)">Child</span><span style="font-size:14px;font-weight:600">Emma Johnson</span></div>
+      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0"><span style="font-size:14px;color:var(--text2)">Trip Type</span><span style="font-size:14px;font-weight:600">Home to School</span></div>
+      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0"><span style="font-size:14px;color:var(--text2)">Driver</span><span style="font-size:14px;font-weight:600">Sarah Williams</span></div>
+      <div style="display:flex;justify-content:space-between;padding:10px 0;align-items:center">
+        <span style="font-size:14px;color:var(--text2)">Pickup Time</span>
+        <div style="display:flex;align-items:center;gap:8px;background:#f5f5f5;padding:8px 14px;border-radius:10px">
+          <span style="font-size:14px;font-weight:600">07:30 am</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="var(--blue2)" stroke-width="2"/><path d="M12 6v6l4 2" stroke="var(--blue2)" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="info-box green" style="margin-bottom:20px">
+      <input type="checkbox" style="margin-top:2px;width:16px;height:16px;flex-shrink:0">
+      <div><div style="font-size:13px;font-weight:600;color:#065f46">Make this a recurring trip</div><div style="font-size:12px;color:#15803d">Schedule for every school day</div></div>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline" onclick="go('s-select-driver')" style="font-size:14px;padding:13px">Back</button>
+      <button class="btn btn-green" onclick="go('s-trip-booked')" style="font-size:14px;padding:13px">Confirm &amp; Schedule</button>
+    </div>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="go('s-dashboard')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--blue2)" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="var(--blue2)" stroke-width="2"/></svg><span class="nav-label active">Home</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Track</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Alerts</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════════
+     SCREEN 14: TRIP BOOKED
+═══════════════════════════════════════════════════════════ -->
+<div class="screen" id="s-trip-booked">
+  <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+  <div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>
+  <div class="back-btn" onclick="go('s-dashboard')">&#8249; Back to Dashboard</div>
+  <div class="divider"></div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px">
+    <div class="card card-shadow" style="width:100%;text-align:center;padding:32px 24px">
+      <div style="width:70px;height:70px;background:#dcfce7;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+        <svg width="36" height="36" viewBox="0 0 36 36"><path d="M6 18 L14 26 L30 10" stroke="#22c55e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+      </div>
+      <div style="font-size:16px;font-weight:700;margin-bottom:8px">Trip Scheduled Successfully!</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Notification has been sent to the driver.</div>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px;font-size:13px;color:#15803d">On-demand trip request sent to driver</div>
+    </div>
+    <button class="btn btn-blue" style="margin-top:24px" onclick="go('s-dashboard')">Back to Home</button>
+  </div>
+  <div class="nav-bar">
+    <div class="nav-item" onclick="go('s-dashboard')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--blue2)" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="var(--blue2)" stroke-width="2"/></svg><span class="nav-label active">Home</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Track</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Alerts</span></div>
+    <div class="nav-item"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+  </div>
+  <div class="home-bar"><div class="home-indicator"></div></div>
+</div>
+
+</div><!-- /phone -->
+
+<!-- ROLE SWITCHER -->
+<div id="role-switcher">
+  <button class="role-btn parent" onclick="location.href='../parent/index.html'">👨‍👩‍👧 Parent View</button>
+  <button class="role-btn driver" onclick="location.href='../driver/index.html'">🚗 Driver View</button>
+  <button class="role-btn guard" onclick="location.href='../guard/index.html'">🛡️ Guard View</button>
+</div>
+<script>
+function rgOpenScreen(id){
+  document.querySelectorAll('.screen').forEach(function(screen){
+    screen.classList.remove('active');
+  });
+  var screen = document.getElementById(id);
+  if(screen){
+    screen.classList.add('active');
+    screen.scrollTop = 0;
+  }
+}
+
+function rgEnsureParentUtilityScreens(){
+  var phone = document.getElementById('phone');
+  if(!phone) return;
+  if(!document.getElementById('s-alerts')){
+    phone.insertAdjacentHTML('beforeend',
+      '<div class="screen" id="s-alerts">' +
+        '<div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>' +
+        '<div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>' +
+        '<div class="back-btn" onclick="window.go ? go(\\'s-dashboard\\') : rgOpenScreen(\\'s-dashboard\\')">&#8249; Back</div>' +
+        '<div class="divider"></div>' +
+        '<div class="scroll-content" style="padding:16px 18px"></div>' +
+      '</div>');
+  }
+  if(!document.getElementById('s-profile')){
+    phone.insertAdjacentHTML('beforeend',
+      '<div class="screen" id="s-profile">' +
+        '<div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>' +
+        '<div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>' +
+        '<div class="back-btn" onclick="window.go ? go(\\'s-dashboard\\') : rgOpenScreen(\\'s-dashboard\\')">&#8249; Back</div>' +
+        '<div class="divider"></div>' +
+        '<div class="scroll-content" style="padding:16px 18px"></div>' +
+      '</div>');
+  }
+}
+
+window.openAlerts = window.openAlerts || function(){
+  rgEnsureParentUtilityScreens();
+  var content = document.querySelector('#s-alerts .scroll-content');
+  if(content){
+    content.innerHTML = '<h2 style="font-size:22px;font-weight:800;color:var(--blue2);margin-bottom:14px">Alerts</h2><div class="rg-muted-state">Loading alerts...</div>';
+  }
+  rgOpenScreen('s-alerts');
+  fetch('../api/notifications.php?user_id=1')
+    .then(function(response){ return response.json(); })
+    .then(function(data){
+      var alerts = data.notifications || [];
+      if(!content) return;
+      content.innerHTML = '<h2 style="font-size:22px;font-weight:800;color:var(--blue2);margin-bottom:14px">Alerts</h2>' +
+        (alerts.length ? alerts.map(function(alert){
+          return '<div class="card card-shadow" style="margin-bottom:10px"><div style="font-size:14px;font-weight:800">' + alert.title + '</div><div style="font-size:12px;color:var(--text2);margin-top:4px">' + alert.message + '</div></div>';
+        }).join('') : '<div class="rg-muted-state">No alerts yet.</div>');
+    })
+    .catch(function(){
+      if(content) content.innerHTML = '<h2 style="font-size:22px;font-weight:800;color:var(--blue2);margin-bottom:14px">Alerts</h2><div class="rg-muted-state">No alerts loaded. Check your database connection.</div>';
+    });
+};
+
+window.openProfile = window.openProfile || function(){
+  rgEnsureParentUtilityScreens();
+  var content = document.querySelector('#s-profile .scroll-content');
+  if(content){
+    content.innerHTML = '<h2 style="font-size:22px;font-weight:800;color:var(--blue2);margin-bottom:14px">Profile</h2><div class="rg-muted-state">Loading profile...</div>';
+  }
+  rgOpenScreen('s-profile');
+  fetch('../api/profile.php?user_id=1')
+    .then(function(response){ return response.json(); })
+    .then(function(data){
+      var profile = data.profile || {};
+      var name = ((profile.first_name || '') + ' ' + (profile.last_name || '')).trim() || 'Parent Profile';
+      if(!content) return;
+      content.innerHTML =
+        '<h2 style="font-size:22px;font-weight:800;color:var(--blue2);margin-bottom:14px">Profile</h2>' +
+        '<div class="card card-shadow" style="margin-bottom:12px"><div style="font-size:16px;font-weight:800">' + name + '</div><div style="font-size:12px;color:var(--text2)">Parent</div></div>' +
+        '<div class="card card-shadow">' +
+          '<div style="font-size:14px;font-weight:800;margin-bottom:12px">Edit Information</div>' +
+          '<label class="input-label">First Name</label><input id="profileFirstName" class="input-field" style="margin-bottom:10px" value="' + (profile.first_name || '') + '">' +
+          '<label class="input-label">Last Name</label><input id="profileLastName" class="input-field" style="margin-bottom:10px" value="' + (profile.last_name || '') + '">' +
+          '<label class="input-label">Email</label><input class="input-field" style="margin-bottom:10px;background:#f8fafc" disabled value="' + (profile.email || '') + '">' +
+          '<label class="input-label">Phone</label><input id="profilePhone" class="input-field" style="margin-bottom:10px" value="' + (profile.phone || '') + '">' +
+          '<label class="input-label">Emergency Contact</label><input id="profileEmergency" class="input-field" style="margin-bottom:10px" value="' + ((profile.parent_profile && profile.parent_profile.emergency_contact) || '') + '">' +
+          '<label class="input-label">Address</label><textarea id="profileAddress" class="input-field" style="height:82px;resize:none;margin-bottom:12px">' + ((profile.parent_profile && profile.parent_profile.address) || '') + '</textarea>' +
+          '<button class="btn btn-blue" onclick="saveParentProfile()">Save Changes</button>' +
+        '</div>';
+    })
+    .catch(function(){
+      if(content) content.innerHTML = '<h2 style="font-size:22px;font-weight:800;color:var(--blue2);margin-bottom:14px">Profile</h2><div class="rg-muted-state">Profile could not load. Check your database connection.</div>';
+    });
+};
+
+window.saveParentProfile = window.saveParentProfile || function(){
+  var payload = {
+    user_id: 1,
+    first_name: (document.getElementById('profileFirstName') || {}).value || '',
+    last_name: (document.getElementById('profileLastName') || {}).value || '',
+    phone: (document.getElementById('profilePhone') || {}).value || '',
+    emergency_contact: (document.getElementById('profileEmergency') || {}).value || '',
+    address: (document.getElementById('profileAddress') || {}).value || ''
+  };
+  payload.first_name = payload.first_name.trim();
+  payload.last_name = payload.last_name.trim();
+  if(!payload.first_name || !payload.last_name){
+    alert('First and last name are required');
+    return;
+  }
+  fetch('../api/profile.php', {
+    method: 'PATCH',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  })
+    .then(function(response){ return response.json(); })
+    .then(function(data){
+      if(data.ok === false) throw new Error(data.error || 'Profile update failed');
+      window.openProfile();
+    })
+    .catch(function(error){ alert(error.message || 'Profile update failed'); });
+};
+
+document.addEventListener('click', function(event){
+  var item = event.target.closest('.nav-item');
+  if(!item) return;
+  var label = item.textContent.trim().toLowerCase();
+  if(label === 'alerts'){
+    event.preventDefault();
+    window.openAlerts();
+  }
+  if(label === 'profile'){
+    event.preventDefault();
+    window.openProfile();
+  }
+});
+</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="../shared/js/app.js?v=parent-profile-update-1"></script>
+</body>
+</html>
