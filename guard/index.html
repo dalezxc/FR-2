@@ -27,7 +27,7 @@
     </svg>
     <div style="font-size:34px;font-weight:900;color:#fff;letter-spacing:2px;margin-bottom:90px">RIDEGUARD</div>
     <div style="width:100%;display:flex;flex-direction:column;gap:14px">
-      <button class="btn" style="background:#fff;color:var(--blue2);font-size:16px;font-weight:800;letter-spacing:1px" onclick="go('s-guard-dash')">LOGIN</button>
+      <button class="btn" style="background:#fff;color:var(--blue2);font-size:16px;font-weight:800;letter-spacing:1px" onclick="guardLogin()">LOGIN</button>
       <p style="text-align:center;color:rgba(255,255,255,0.9);font-size:14px">Don't Have an Account? <span style="text-decoration:underline;font-weight:700;cursor:pointer;color:#fff">Sign Up</span></p>
     </div>
   </div>
@@ -82,13 +82,13 @@
   <div class="nav-bar">
     <div class="nav-item" onclick="go('s-guard-dash')">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="var(--blue2)" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="var(--blue2)" stroke-width="2"/></svg>
-      <span class="nav-label active">Home</span>
+      <span class="nav-label active">Scan</span>
     </div>
-    <div class="nav-item" onclick="go('s-guard-scans')">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="#999" stroke-width="2"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#999" stroke-width="2"/></svg>
-      <span class="nav-label">Scans</span>
+    <div class="nav-item" onclick="go('s-guard-history')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 13h7v8H3z" stroke="#999" stroke-width="1.6"/><path d="M14 3h7v18h-7z" stroke="#999" stroke-width="1.6"/></svg>
+      <span class="nav-label">Trip History</span>
     </div>
-    <div class="nav-item">
+    <div class="nav-item" onclick="openProfile()">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg>
       <span class="nav-label">Profile</span>
     </div>
@@ -115,13 +115,13 @@
   <div class="nav-bar">
     <div class="nav-item" onclick="go('s-guard-dash')">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="#999" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="#999" stroke-width="2"/></svg>
-      <span class="nav-label">Home</span>
+      <span class="nav-label">Scan</span>
     </div>
-    <div class="nav-item" onclick="go('s-guard-scans')">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="var(--blue2)" stroke-width="2"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="var(--blue2)" stroke-width="2"/></svg>
-      <span class="nav-label active">Scans</span>
+    <div class="nav-item" onclick="go('s-guard-history')">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 13h7v8H3z" stroke="var(--blue2)" stroke-width="1.6"/><path d="M14 3h7v18h-7z" stroke="var(--blue2)" stroke-width="1.6"/></svg>
+      <span class="nav-label active">Trip History</span>
     </div>
-    <div class="nav-item">
+    <div class="nav-item" onclick="openProfile()">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg>
       <span class="nav-label">Profile</span>
     </div>
@@ -137,6 +137,7 @@
   <button class="role-btn driver" onclick="location.href='../driver/index.html'">🚗 Driver View</button>
   <button class="role-btn guard" onclick="location.href='../guard/index.html'">🛡️ Guard View</button>
 </div>
-<script src="../shared/js/app.js"></script>
+<script src="../shared/js/jsQR.min.js"></script>
+<script src="../shared/js/app.js?v=qr-scan-fix-3"></script>
 </body>
 </html>

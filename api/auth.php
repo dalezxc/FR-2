@@ -12,8 +12,8 @@ $action = (string) value($data, 'action', 'login');
 try {
     if ($action === 'register') {
         $role = strtolower((string) value($data, 'role', 'parent'));
-        if (!in_array($role, ['parent', 'driver'], true)) {
-            respond(['ok' => false, 'error' => 'Select parent or driver sign up'], 422);
+        if (!in_array($role, ['parent', 'driver', 'guard'], true)) {
+            respond(['ok' => false, 'error' => 'Select parent, driver, or guard sign up'], 422);
         }
 
         $firstName = trim((string) value($data, 'first_name', ''));
@@ -136,6 +136,32 @@ try {
             ]);
         }
 
+        if ($role === 'guard') {
+            $guardProfile = $pdo->prepare('
+                INSERT INTO guard_profiles (guard_id, school_id, assigned_gate)
+                VALUES (?, NULL, NULL)
+            ');
+            $guardProfile->execute([$userId]);
+
+            $pdo->commit();
+            respond([
+                'ok' => true,
+                'user_id' => $userId,
+                'user' => [
+                    'id' => $userId,
+                    'role' => $role,
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'email' => $email,
+                    'phone' => $phone,
+                    'guard_profile' => [
+                        'assigned_gate' => null,
+                        'school_id' => null,
+                    ],
+                ],
+            ]);
+        }
+
         $parentProfile = $pdo->prepare('
             INSERT INTO parent_profiles (parent_id, emergency_contact, address)
             VALUES (?, NULL, NULL)
@@ -192,6 +218,7 @@ try {
                     'date_of_birth' => $childDateOfBirth ?: null,
                     'grade_level' => $childGradeLevel,
                     'school_name' => $schoolName,
+                    'qr_code' => $qrCode,
                 ],
                 'children' => [[
                     'id' => $studentId,
@@ -201,6 +228,7 @@ try {
                     'date_of_birth' => $childDateOfBirth ?: null,
                     'grade_level' => $childGradeLevel,
                     'school_name' => $schoolName,
+                    'qr_code' => $qrCode,
                 ]],
             ],
         ]);
@@ -224,7 +252,7 @@ try {
     unset($user['password_hash']);
     if ($user['role'] === 'parent') {
         $child = db()->prepare('
-            SELECT id, first_name, last_name, age, date_of_birth, grade_level, school_name
+            SELECT id, first_name, last_name, age, date_of_birth, grade_level, school_name, qr_code
             FROM students
             WHERE parent_id = ?
             ORDER BY id ASC
@@ -233,6 +261,15 @@ try {
         $children = $child->fetchAll();
         $user['children'] = $children;
         $user['child'] = $children[0] ?? null;
+    } elseif ($user['role'] === 'guard') {
+        $guard = db()->prepare('
+            SELECT gp.assigned_gate, s.name AS school_name
+            FROM guard_profiles gp
+            LEFT JOIN schools s ON s.id = gp.school_id
+            WHERE gp.guard_id = ?
+        ');
+        $guard->execute([(int) $user['id']]);
+        $user['guard_profile'] = $guard->fetch() ?: null;
     }
 
     respond(['ok' => true, 'user' => $user]);

@@ -7,7 +7,10 @@ require_once __DIR__ . '/bootstrap.php';
 try {
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $role = (string) value($_GET, 'role', 'parent');
-        $userId = (int) value($_GET, 'user_id', $role === 'driver' ? 2 : 1);
+        $userId = (int) value($_GET, 'user_id', 0);
+        if (!$userId) {
+            respond(['ok' => false, 'error' => 'Missing user_id'], 422);
+        }
         $where = $role === 'driver' ? 't.driver_id = ?' : 't.parent_id = ?';
 
         $stmt = db()->prepare("

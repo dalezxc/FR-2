@@ -20,8 +20,12 @@ try {
 
     require_method('PATCH');
     $data = input();
+    $driverId = (int) value($data, 'driver_id', 0);
+    if (!$driverId) {
+        respond(['ok' => false, 'error' => 'Missing driver_id'], 422);
+    }
     $stmt = db()->prepare('UPDATE driver_profiles SET is_online = ? WHERE driver_id = ?');
-    $stmt->execute([(int) value($data, 'is_online', 1), (int) value($data, 'driver_id', 2)]);
+    $stmt->execute([(int) value($data, 'is_online', 1), $driverId]);
     respond(['ok' => true]);
 } catch (Throwable $e) {
     respond(['ok' => false, 'error' => $e->getMessage()], 500);

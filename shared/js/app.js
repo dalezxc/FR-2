@@ -1,14 +1,48 @@
 const API_BASE = location.protocol === 'file:'
-  ? 'http://127.0.0.1:8077/api'
+  ? 'http://127.0.0.1/FR-2/api'
   : (/\/(parent|driver|guard)\//.test(location.pathname) ? '../api' : 'api');
-const DEFAULT_DRIVER_ID = 2;
+const DEFAULT_DRIVER_ID = 0;
 const DEFAULT_PICKUP = '123 Oak Street, Apartment 4B';
 let currentRating = 0;
-let selectedTripType = 'home_to_school';
+let selectedTripType = localStorage.getItem('rideguard_trip_type') || 'home_to_school';
+let driverMap = null;
+let driverMarker = null;
+let driverRoutePolyline = null;
+let driverWatchId = null;
+let driverSimId = null;
+let driverRouteDestination = null;
 let selectedSignupRole = 'parent';
 let parentMap = null;
 let lastDriverChildName = 'Emma Johnson';
 let originalRegisterStepTwo = '';
+let lastScannedQrCode = '';
+let qrCameraStream = null;
+let qrScanTimer = null;
+
+function setSelectedTripType(type){
+  selectedTripType = type || 'home_to_school';
+  localStorage.setItem('rideguard_trip_type', selectedTripType);
+}
+
+function assetPath(path){
+  return location.pathname.includes('/parent/') || location.pathname.includes('/driver/') || location.pathname.includes('/guard/')
+    ? `../shared/assets/${path}`
+    : `shared/assets/${path}`;
+}
+
+function replaceBrandLogos(){
+  const logoSrc = assetPath('rideguard-logo.png');
+  document.querySelectorAll('.app-header').forEach(header=>{
+    const first = header.firstElementChild;
+    if(first?.classList?.contains('logo-mark')) return;
+    if(first && first.tagName.toLowerCase() === 'svg'){
+      first.outerHTML = `<img class="logo-mark" src="${logoSrc}" alt="RideGuard logo">`;
+    }
+  });
+  document.querySelectorAll('.screen[style*="blue-grad"] svg.pulse').forEach(svg=>{
+    svg.outerHTML = `<img class="landing-logo pulse" src="${logoSrc}" alt="RideGuard logo">`;
+  });
+}
 
 function go(id){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -17,235 +51,118 @@ function go(id){
   if(id === 's-reg2') renderRegistrationStepTwo();
   if(id === 's-alerts' && !window._rgOpeningUtility) openAlerts(false).catch(err=>toast(err.message,true));
   if(id === 's-profile' && !window._rgOpeningUtility) openProfile(false).catch(err=>toast(err.message,true));
+  if(id === 's-parent-trip-history') openParentTripHistory(false).catch(err=>toast(err.message,true));
   if(id === 's-dashboard') refreshParentView().catch(err=>toast(err.message,true));
   if(id === 's-trip-monitor') openTripMonitor().catch(err=>toast(err.message,true));
   if(id === 's-driver-dash') refreshDriverView().catch(err=>toast(err.message,true));
+  if(id === 's-trip-records') refreshDriverRecords().catch(err=>toast(err.message,true));
   if(id === 's-guard-scans') refreshGuardScans().catch(err=>toast(err.message,true));
+  if(id === 's-guard-history') refreshGuardHistory().catch(err=>toast(err.message,true));
   if(id === 's-trip-request' || id === 's-trip-request-loading') refreshDriverView().catch(err=>toast(err.message,true));
+  if(id === 's-active-trip') showActiveTripMap().catch(err=>toast(err.message,true));
 }
 
-// ── Demo / Mock API layer ─────────────────────────────────────────────────────
-// All state lives in memory so the prototype works without a PHP server.
+async function refreshDriverRecords(){
+  if(!document.getElementById('s-trip-records')) return;
+  const driverId = activeDriverId();
+  if(!driverId) return toast('Login as driver first', true);
+  const trips = await loadDriverTrips(driverId);
+  renderTripRecords(trips);
+}
 
-const _mock = (() => {
-  const PARENT = { id:1, role:'parent', first_name:'Ana', last_name:'Reyes', email:'parent@demo.com', phone:'+639171234567' };
-  const DRIVER_USER = { id:2, role:'driver', first_name:'Sarah', last_name:'Williams', email:'driver@demo.com', phone:'+639181234567' };
-  const GUARD_USER  = { id:4, role:'guard',  first_name:'Jose', last_name:'Santos',   email:'guard@demo.com',  phone:'+639191234567' };
-
-  const CHILDREN = [
-    { id:1, parent_id:1, first_name:'Emma',  last_name:'Reyes', date_of_birth:'2016-03-12', grade_level:'Grade 3', school_name:'Lincoln Elementary School', age:8,  qr_token:'QR-EMMA-001' },
-    { id:2, parent_id:1, first_name:'Noah',  last_name:'Reyes', date_of_birth:'2018-07-04', grade_level:'Grade 1', school_name:'Lincoln Elementary School', age:6,  qr_token:'QR-NOAH-001' },
-  ];
-
-  const DRIVERS = [
-    { id:2, first_name:'Sarah', last_name:'Williams', make:'Honda',  model:'CR-V',        plate_number:'ABC-1234', color:'White',  years_experience:5, rating:'4.9', total_trips:324, safety_score:98, is_online:1 },
-    { id:3, first_name:'Michael',last_name:'Chen',    make:'Toyota', model:'Highlander',  plate_number:'XYZ-5678', color:'Black',  years_experience:4, rating:'4.8', total_trips:289, safety_score:96, is_online:1 },
-    { id:5, first_name:'Lisa',  last_name:'Martinez', make:'Honda',  model:'Pilot',       plate_number:'LMN-9012', color:'Silver', years_experience:6, rating:'5.0', total_trips:412, safety_score:99, is_online:1 },
-  ];
-
-  let _trips = [
-    { id:1, parent_id:1, student_id:1, driver_id:2, trip_type:'home_to_school', status:'in_progress',
-      pickup_address:'123 Oak Street, Apartment 4B', dropoff_address:'Lincoln Elementary School',
-      pickup_time:'07:30', scheduled_date: new Date().toISOString().slice(0,10),
-      student_first_name:'Emma', student_last_name:'Reyes',
-      driver_first_name:'Sarah', driver_last_name:'Williams' }
-  ];
-  let _nextTripId = 10;
-
-  let _notifications = [
-    { id:1, user_id:1, title:'Driver accepted your trip', message:'Sarah Williams has accepted Emma\'s trip request.', type:'trip_accepted', is_read:0, created_at: new Date().toISOString() },
-    { id:2, user_id:1, title:'Child picked up',           message:'Emma Reyes has been picked up safely.',            type:'pickup',       is_read:0, created_at: new Date().toISOString() },
-  ];
-  let _nextNotifId = 10;
-
-  let _scans = [
-    { id:1, student_id:1, guard_id:4, trip_id:1, phase:'school_to_home', result:'verified', scanned_at: new Date().toISOString(), student_name:'Emma Reyes' },
-  ];
-  let _nextScanId = 10;
-
-  function delay(ms = 300){ return new Promise(r => setTimeout(r, ms)); }
-
-  function parentProfile(){ return { ...PARENT, parent_profile:{ address:'123 Oak Street, Apartment 4B', emergency_contact:'+639170001111' } }; }
-  function driverProfile(d = DRIVERS[0]){ return { ...DRIVER_USER, first_name:d.first_name, last_name:d.last_name, driver_profile:{ ...d } }; }
-  function guardProfile(){ return { ...GUARD_USER, guard_profile:{} }; }
-
-  return {
-    // auth.php
-    'auth.php': async (path, options) => {
-      await delay();
-      const body = JSON.parse(options?.body || '{}');
-      if(body.action === 'login'){
-        const e = body.email?.toLowerCase();
-        if(e === 'driver@demo.com' || e === 'driver'){
-          localStorage.setItem('rideguard_driver_id', '2');
-          return { user:{ ...DRIVER_USER, children:[], child:null } };
-        }
-        if(e === 'guard@demo.com' || e === 'guard'){
-          return { user:{ ...GUARD_USER, children:[], child:null } };
-        }
-        // any email → parent login
-        const user = { ...PARENT, children:CHILDREN, child:CHILDREN[0] };
-        return { user };
-      }
-      if(body.action === 'register'){
-        if(body.role === 'driver'){
-          localStorage.setItem('rideguard_driver_id', '2');
-          return { user:{ ...DRIVER_USER, children:[], child:null } };
-        }
-        const newChild = { id:CHILDREN.length+1, parent_id:1, first_name:body.child_first_name||'Child', last_name:body.child_last_name||'Reyes', grade_level:body.child_grade_level||'Grade 1', school_name:body.school_name||'Lincoln Elementary School', age:7, qr_token:'QR-NEW-001' };
-        CHILDREN.push(newChild);
-        const user = { ...PARENT, first_name:body.first_name||PARENT.first_name, last_name:body.last_name||PARENT.last_name, email:body.email||PARENT.email, children:[newChild], child:newChild };
-        return { user, student_id: newChild.id };
-      }
-      throw new Error('Unknown auth action');
-    },
-
-    // students.php
-    'students.php': async (path, options) => {
-      await delay();
-      const method = options?.method || 'GET';
-      if(method === 'GET') return { children: CHILDREN.map(c=>({...c})) };
-      if(method === 'POST'){
-        const body = JSON.parse(options.body);
-        const child = { id: CHILDREN.length+10, parent_id:body.parent_id||1, first_name:body.first_name, last_name:body.last_name, date_of_birth:body.date_of_birth, grade_level:body.grade_level, school_name:body.school_name||'Lincoln Elementary School', age:8, qr_token:`QR-${Date.now()}` };
-        CHILDREN.push(child);
-        return { child };
-      }
-    },
-
-    // drivers.php
-    'drivers.php': async (path, options) => {
-      await delay(200);
-      const method = options?.method || 'GET';
-      if(method === 'PATCH'){
-        const body = JSON.parse(options.body);
-        const d = DRIVERS.find(dr=>dr.id === Number(body.driver_id));
-        if(d) d.is_online = body.is_online;
-        return { ok:true };
-      }
-      return { drivers: DRIVERS.map(d=>({...d})) };
-    },
-
-    // trips.php
-    'trips.php': async (path, options) => {
-      await delay();
-      const method = options?.method || 'GET';
-      if(method === 'GET'){
-        // role=parent or role=driver
-        const trips = _trips.map(t=>({...t}));
-        return { trips };
-      }
-      if(method === 'POST'){
-        const body = JSON.parse(options.body);
-        const driver = DRIVERS.find(d=>d.id===Number(body.driver_id)) || DRIVERS[0];
-        const child  = CHILDREN.find(c=>c.id===Number(body.student_id)) || CHILDREN[0];
-        const trip = {
-          id: _nextTripId++,
-          parent_id: body.parent_id||1,
-          student_id: child.id,
-          driver_id: driver.id,
-          trip_type: body.trip_type||'home_to_school',
-          status:'pending',
-          pickup_address: body.pickup_address||'123 Oak Street, Apartment 4B',
-          dropoff_address: body.dropoff_address||'Lincoln Elementary School',
-          pickup_time: body.pickup_time||'07:30',
-          scheduled_date: body.scheduled_date||new Date().toISOString().slice(0,10),
-          student_first_name: child.first_name, student_last_name: child.last_name,
-          driver_first_name: driver.first_name, driver_last_name: driver.last_name
-        };
-        _trips.push(trip);
-        return { trip_id: trip.id };
-      }
-      if(method === 'PATCH'){
-        const body = JSON.parse(options.body);
-        const trip = _trips.find(t=>t.id===Number(body.trip_id));
-        if(trip){ trip.status = body.status; }
-        // fire a notification for parent on key transitions
-        if(body.status === 'accepted'){
-          _notifications.push({ id:_nextNotifId++, user_id:1, title:'Driver accepted your trip', message:'Your driver is on the way.', type:'trip_accepted', is_read:0, created_at:new Date().toISOString() });
-        }
-        if(body.status === 'completed'){
-          _notifications.push({ id:_nextNotifId++, user_id:1, title:'Child arrived safely', message:'Trip has been completed successfully.', type:'arrival', is_read:0, created_at:new Date().toISOString() });
-        }
-        return { ok:true };
-      }
-    },
-
-    // notifications.php
-    'notifications.php': async (path, options) => {
-      await delay(150);
-      const method = options?.method || 'GET';
-      if(method === 'GET') return { notifications: _notifications.map(n=>({...n})) };
-      if(method === 'POST'){
-        const body = JSON.parse(options.body);
-        _notifications.push({ id:_nextNotifId++, ...body, is_read:0, created_at:new Date().toISOString() });
-        return { ok:true };
-      }
-      if(method === 'PATCH'){
-        const body = JSON.parse(options.body);
-        const n = _notifications.find(n=>n.id===Number(body.notification_id));
-        if(n) n.is_read = 1;
-        return { ok:true };
-      }
-    },
-
-    // profile.php
-    'profile.php': async (path, options) => {
-      await delay(150);
-      const method = options?.method || 'GET';
-      if(method === 'GET'){
-        const url = new URL('http://x/' + path.replace(/^.*profile\.php/, 'profile.php'));
-        const uid = Number(url.searchParams.get('user_id') || 1);
-        if(uid === 2 || uid === 3 || uid === 5){ const d = DRIVERS.find(dr=>dr.id===uid)||DRIVERS[0]; return { profile: driverProfile(d) }; }
-        if(uid === 4) return { profile: guardProfile() };
-        return { profile: parentProfile() };
-      }
-      if(method === 'PATCH'){
-        const body = JSON.parse(options.body);
-        if(body.first_name) PARENT.first_name = body.first_name;
-        if(body.last_name)  PARENT.last_name  = body.last_name;
-        if(body.phone)      PARENT.phone       = body.phone;
-        return { ok:true };
-      }
-    },
-
-    // ratings.php
-    'ratings.php': async (path, options) => {
-      await delay(200);
-      return { ok:true };
-    },
-
-    // scans.php
-    'scans.php': async (path, options) => {
-      await delay(200);
-      const method = options?.method || 'GET';
-      if(method === 'GET') return { scans: _scans.map(s=>({...s})) };
-      if(method === 'POST'){
-        const body = JSON.parse(options.body);
-        const child = CHILDREN.find(c=>c.id===Number(body.student_id));
-        const scan = { id:_nextScanId++, student_id:body.student_id, guard_id:body.guard_id, trip_id:body.trip_id, phase:body.phase, result:body.result||'verified', scanned_at:new Date().toISOString(), student_name: child ? `${child.first_name} ${child.last_name}` : `Student #${body.student_id}` };
-        _scans.unshift(scan);
-        return { ok:true, scan };
-      }
-    },
-
-    // health.php (fallback)
-    'health.php': async () => ({ ok:true }),
-  };
-})();
-
-async function api(path, options = {}){
-  // Strip query string to find the handler key
-  const key = path.split('?')[0];
-  const handler = _mock[key];
-  if(handler){
-    const result = await handler(path, options);
-    if(result === undefined) return { ok:true };
-    return result;
+function renderTripRecords(trips = []){
+  const screen = document.getElementById('s-trip-records');
+  if(!screen) return;
+  const list = screen.querySelector('.scroll-content');
+  if(!list) return;
+  if(!trips.length) {
+    list.innerHTML = '<div class="rg-muted-state">No trips recorded yet.</div>';
+    return;
   }
-  // Unknown endpoint — silently succeed so nothing breaks
-  console.warn('[RideGuard demo] No mock for:', key);
-  return { ok:true };
+  list.innerHTML = `
+    <h2 style="font-size:22px;font-weight:800;color:var(--blue2);margin-bottom:14px">Trip Records</h2>
+    ${trips.map(t=>`
+      <div class="card card-shadow" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;gap:10px"><div><div style="font-size:14px;font-weight:800">${t.student_first_name} ${t.student_last_name}</div><div style="font-size:12px;color:var(--text2)">${tripLabel(t.trip_type)} - ${formatTime(t.pickup_time)}</div></div>${statusBadge(t.status)}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:8px">${t.pickup_address} → ${t.dropoff_address}</div>
+      </div>
+    `).join('')}
+  `;
+}
+
+function renderParentTripHistory(trips = []){
+  const list = document.querySelector('#s-parent-trip-history .scroll-content');
+  if(!list) return;
+  list.innerHTML = `
+    <h2 style="font-size:22px;font-weight:800;color:var(--blue2);margin-bottom:14px">Trip History</h2>
+    ${trips.length ? trips.map(t=>`
+      <div class="card card-shadow" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;gap:10px">
+          <div>
+            <div style="font-size:14px;font-weight:800">${t.student_first_name} ${t.student_last_name}</div>
+            <div style="font-size:12px;color:var(--text2)">${tripLabel(t.trip_type)} - ${formatTime(t.pickup_time)}</div>
+          </div>
+          ${statusBadge(t.status)}
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-top:8px">${t.pickup_address} -> ${t.dropoff_address}</div>
+      </div>`).join('') : '<div class="rg-muted-state">No trips recorded yet.</div>'}
+  `;
+}
+
+function renderGuardTripHistory(scans = []){
+  const list = document.querySelector('#s-guard-history .scroll-content');
+  if(!list) return;
+  list.innerHTML = `
+    <h2 style="font-size:22px;font-weight:800;color:var(--blue2);margin-bottom:14px">Trip History</h2>
+    ${scans.length ? scans.map(s=>{
+      const time = s.scanned_at ? new Date(s.scanned_at).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '';
+      return `<div class="card card-shadow" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+          <div>
+            <div style="font-size:14px;font-weight:800">${s.student_name || `${s.first_name || ''} ${s.last_name || ''}`.trim() || 'Student'}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:3px">${tripLabel(s.phase || 'school_to_home')}</div>
+          </div>
+          <span class="badge ${s.result === 'verified' ? 'badge-green' : 'badge-yellow'}">${s.result || 'logged'}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2);margin-top:8px">${time}</div>
+      </div>`;
+    }).join('') : '<div class="rg-muted-state">No guard trip history yet.</div>'}
+  `;
+}
+
+// Real API layer: call PHP endpoints using fetch and return parsed JSON.
+async function api(path, options = {}){
+  const base = API_BASE.replace(/\/$/, '');
+  const url = path.startsWith('http') ? path : (base + '/' + path.replace(/^\//, ''));
+  const fetchOpts = {
+    method: options.method || 'GET',
+    headers: Object.assign({'Accept':'application/json'}, options.headers || {})
+  };
+  if (fetchOpts.method !== 'GET' && options.body !== undefined) {
+    fetchOpts.headers['Content-Type'] = fetchOpts.headers['Content-Type'] || 'application/json';
+    fetchOpts.body = options.body;
+  }
+
+  let res;
+  try {
+    res = await fetch(url, fetchOpts);
+  } catch (e) {
+    throw new Error(`Could not reach RideGuard API at ${url}. Open the app through http://127.0.0.1/FR-2/ or start Apache in XAMPP.`);
+  }
+  const text = await res.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : {}; } catch (e) { throw new Error('Invalid JSON response from API'); }
+
+  if (!res.ok) {
+    const err = data && data.error ? data.error : res.statusText || 'Request failed';
+    throw new Error(err);
+  }
+
+  if (data && data.ok === false) {
+    throw new Error(data.error || 'API returned an error');
+  }
+
+  return data || {};
 }
 
 function getInput(screenId, placeholder){
@@ -313,16 +230,34 @@ function childName(child = selectedChild()){
 }
 
 function selectedDriver(){
-  try { return JSON.parse(localStorage.getItem('rideguard_selected_driver')) || {id:2, name:'Sarah Williams'}; }
-  catch { return {id:2, name:'Sarah Williams'}; }
+  try { return JSON.parse(localStorage.getItem('rideguard_selected_driver')) || null; }
+  catch { return null; }
 }
 
 function activeDriverId(){
-  return Number(localStorage.getItem('rideguard_driver_id') || selectedDriver().id || DEFAULT_DRIVER_ID);
+  const user = currentUser();
+  if (user?.role === 'driver') return Number(user.id);
+  const stored = Number(localStorage.getItem('rideguard_driver_id') || 0);
+  return stored || Number(selectedDriver()?.id || 0);
+}
+
+function activeGuardId(){
+  const user = currentUser();
+  if (user?.role === 'guard') return Number(user.id);
+  return Number(localStorage.getItem('rideguard_guard_id') || 0);
+}
+
+function storeGuardId(guardId){
+  if (!guardId) return;
+  localStorage.setItem('rideguard_guard_id', String(guardId));
 }
 
 function storeSelectedDriver(driver){
   localStorage.setItem('rideguard_selected_driver', JSON.stringify(driver));
+}
+
+function escapeAttr(value = ''){
+  return String(value).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 function driverDisplayName(driver){
@@ -602,6 +537,15 @@ function renderChildren(children){
         <div style="font-size:15px;font-weight:800">${childName(child)}</div>
         <div style="font-size:12px;color:var(--text2)">${child.grade_level || 'Grade not set'} - Age ${child.age || ''}</div>
         <div style="font-size:12px;color:var(--text2)">${child.school_name || 'Lincoln Elementary School'}</div>
+        ${child.qr_code ? `
+          <div class="rg-qr-wrap">
+            <div class="rg-child-qr" data-qr-code="${escapeAttr(child.qr_code)}"></div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:11px;color:var(--text3);margin-bottom:5px">Student QR</div>
+              <div style="font-size:11px;font-weight:800;color:var(--text);word-break:break-all">${child.qr_code}</div>
+              <button class="rg-copy" onclick="navigator.clipboard?.writeText('${escapeAttr(child.qr_code)}').then(()=>toast('Copied QR code'))">Copy QR</button>
+            </div>
+          </div>` : ''}
       </div>
       <button class="rg-small-btn" onclick="selectChild(${Number(child.id)})">${active?.id == child.id ? 'Selected' : 'Select'}</button>
     </div>`).join('')}</div>`;
@@ -660,6 +604,7 @@ function renderParentDashboard(children, trips, notifications = []){
         <div style="display:flex;justify-content:space-between;gap:10px"><div><div style="font-size:14px;font-weight:800">${t.student_first_name} ${t.student_last_name}</div><div style="font-size:12px;color:var(--text2)">${tripLabel(t.trip_type)} - ${formatTime(t.pickup_time)}</div></div>${statusBadge(t.status)}</div>
       </div>`).join('') : '<div class="rg-muted-state">Trips you schedule will show here.</div>'}
   `;
+  renderQrCodes();
 }
 
 function ensureUtilityScreens(){
@@ -685,6 +630,258 @@ function ensureUtilityScreens(){
         <div class="scroll-content" style="padding:16px 18px"></div>
       </div>`);
   }
+  if(document.getElementById('s-dashboard') && !document.getElementById('s-parent-trip-history')){
+    phone.insertAdjacentHTML('beforeend', `
+      <div class="screen" id="s-parent-trip-history">
+        <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+        <div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>
+        <div class="back-btn" onclick="go('s-dashboard')">&#8249; Back</div>
+        <div class="divider"></div>
+        <div class="scroll-content" style="padding:16px 18px"></div>
+      </div>`);
+  }
+  if(document.getElementById('s-guard-dash') && !document.getElementById('s-guard-history')){
+    phone.insertAdjacentHTML('beforeend', `
+      <div class="screen" id="s-guard-history">
+        <div class="status-bar white"><span class="status-time">9:41</span><div class="status-icons"></div></div>
+        <div class="app-header"><svg width="28" height="28" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#dbeafe"/><path d="M37 52 L50 24 L63 52" fill="#2196F3"/></svg><span class="app-name">RIDEGUARD</span></div>
+        <div class="back-btn" onclick="go('s-guard-dash')">&#8249; Back</div>
+        <div class="divider"></div>
+        <div class="scroll-content" style="padding:16px 18px"></div>
+        <div class="nav-bar">
+          <div class="nav-item" onclick="go('s-guard-dash')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="#999" stroke-width="2"/><polyline points="9 22 9 12 15 12 15 22" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Scan</span></div>
+          <div class="nav-item" onclick="go('s-guard-history')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 13h7v8H3z" stroke="var(--blue2)" stroke-width="1.6"/><path d="M14 3h7v18h-7z" stroke="var(--blue2)" stroke-width="1.6"/></svg><span class="nav-label active">Trip History</span></div>
+          <div class="nav-item" onclick="openProfile()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+        </div>
+        <div class="home-bar"><div class="home-indicator"></div></div>
+      </div>`);
+  }
+  replaceBrandLogos();
+}
+
+function renderQrCodes(){
+  document.querySelectorAll('.rg-child-qr[data-qr-code]').forEach(el=>{
+    if(el.dataset.rendered === el.dataset.qrCode) return;
+    el.innerHTML = '';
+    const code = el.dataset.qrCode || '';
+    if(window.QRCode){
+      new QRCode(el, {text: code, width: 82, height: 82, correctLevel: QRCode.CorrectLevel.M});
+    } else {
+      const img = document.createElement('img');
+      img.src = `https://api.qrserver.com/v1/create-qr-code/?size=82x82&data=${encodeURIComponent(code)}`;
+      img.alt = 'Student QR code';
+      img.width = 82;
+      img.height = 82;
+      el.appendChild(img);
+    }
+    el.dataset.rendered = code;
+  });
+}
+
+function currentScanPhase(){
+  const selected = document.querySelector('#phaseRow .phase-card.selected .phase-label')?.textContent.toLowerCase() || '';
+  return selected.includes('home to school') ? 'home_to_school' : 'school_to_home';
+}
+
+function scanSourceLabel(source){
+  if(source === 'driver_dropoff') return 'dropoff';
+  return source || 'guard';
+}
+
+function ensureQrScannerControls(){
+  const screens = [
+    ['s-guard-dash', 'guard'],
+    ['s-qr-scan', 'driver'],
+    ['s-qr-scan-dropoff', 'driver_dropoff'],
+  ];
+  screens.forEach(([screenId, source])=>{
+    const screen = document.getElementById(screenId);
+    const qrView = screen?.querySelector('.qr-view');
+    if(!screen || !qrView || screen.querySelector('.rg-qr-controls')) return;
+    qrView.insertAdjacentHTML('afterend', `
+      <div class="rg-qr-controls">
+        <video class="rg-qr-video" playsinline muted></video>
+        <canvas class="rg-qr-canvas" style="display:none"></canvas>
+        <div class="rg-qr-status">Ready to scan QR.</div>
+        <input class="input-field rg-qr-manual" placeholder="Detected QR code" style="margin-bottom:8px">
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <button class="rg-small-btn" onclick="startQrCamera('${source}')">Camera</button>
+          <button class="rg-small-btn" onclick="document.getElementById('qrUpload-${screenId}').click()">Upload QR</button>
+          <button class="rg-small-btn" onclick="verifyTypedQr('${source}', '${screenId}')">Verify</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <button class="rg-small-btn" onclick="loadLatestStudentQr('${source}', '${screenId}')">Use Latest Child QR</button>
+        </div>
+        <div class="rg-scanner-test-qr"></div>
+        <input id="qrUpload-${screenId}" type="file" accept="image/*" style="display:none" onchange="scanUploadedQr(this,'${source}')">
+      </div>
+    `);
+  });
+}
+
+function qrScreenId(source){
+  return source === 'guard' ? 's-guard-dash' : (source === 'driver_dropoff' ? 's-qr-scan-dropoff' : 's-qr-scan');
+}
+
+function setQrStatus(source, message, isError = false){
+  const status = document.querySelector(`#${qrScreenId(source)} .rg-qr-status`);
+  if(status){
+    status.textContent = message;
+    status.style.color = isError ? '#dc2626' : 'var(--text2)';
+  }
+}
+
+function setDetectedQr(source, value){
+  const input = document.querySelector(`#${qrScreenId(source)} .rg-qr-manual`);
+  if(input) input.value = value || '';
+}
+
+async function loadLatestStudentQr(source, screenId){
+  try {
+    const data = await api('students.php?latest=1');
+    const qrCode = data.child?.qr_code || '';
+    if(!qrCode) throw new Error('No child QR found yet.');
+    const input = document.querySelector(`#${screenId} .rg-qr-manual`);
+    if(input) input.value = qrCode;
+    const qrBox = document.querySelector(`#${screenId} .rg-scanner-test-qr`);
+    if(qrBox){
+      qrBox.innerHTML = '<div style="font-size:12px;font-weight:800;color:var(--text2);margin-bottom:6px">Latest child QR</div><div class="rg-child-qr" data-qr-code=""></div>';
+      const qr = qrBox.querySelector('.rg-child-qr');
+      qr.dataset.qrCode = qrCode;
+      renderQrCodes();
+    }
+    setQrStatus(source, 'Latest child QR loaded. Press Verify or scan this QR with another device.');
+  } catch(err){
+    setQrStatus(source, err.message || 'Could not load latest child QR.', true);
+    toast(err.message || 'Could not load latest child QR.', true);
+  }
+}
+
+function stopQrCamera(){
+  if(qrScanTimer) cancelAnimationFrame(qrScanTimer);
+  qrScanTimer = null;
+  if(qrCameraStream){
+    qrCameraStream.getTracks().forEach(track=>track.stop());
+    qrCameraStream = null;
+  }
+  document.querySelectorAll('.rg-qr-video').forEach(video=>{
+    video.pause();
+    video.removeAttribute('srcObject');
+    video.style.display = 'none';
+  });
+}
+
+async function decodeQrFromBitmap(bitmap){
+  if('BarcodeDetector' in window){
+    const detector = new BarcodeDetector({formats:['qr_code']});
+    const codes = await detector.detect(bitmap);
+    const value = codes[0]?.rawValue || codes[0]?.rawData || '';
+    if(value) return value;
+  }
+  if(window.jsQR){
+    const canvas = document.createElement('canvas');
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext('2d', {willReadFrequently:true});
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    return decodeQrFromCanvas(canvas);
+  }
+  throw new Error('QR scanner library did not load. Check your connection, then refresh the page.');
+}
+
+function decodeQrFromCanvas(canvas){
+  if(!window.jsQR) return '';
+  const ctx = canvas.getContext('2d', {willReadFrequently:true});
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const code = window.jsQR(imageData.data, imageData.width, imageData.height, {inversionAttempts:'attemptBoth'});
+  return code?.data || '';
+}
+
+async function scanUploadedQr(input, source){
+  const file = input.files?.[0];
+  input.value = '';
+  if(!file) return;
+  try {
+    const bitmap = await createImageBitmap(file);
+    lastScannedQrCode = await decodeQrFromBitmap(bitmap);
+    setDetectedQr(source, lastScannedQrCode);
+    setQrStatus(source, 'QR detected. Verifying...');
+    toast('QR detected from uploaded image');
+    await completeQrScan(source);
+  } catch(err){
+    setQrStatus(source, 'Could not read that QR image.', true);
+    const manual = (window.prompt(`${err.message}\nEnter QR code manually`) || '').trim();
+    if(!manual) return;
+    lastScannedQrCode = manual;
+    setDetectedQr(source, manual);
+    await completeQrScan(source);
+  }
+}
+
+async function verifyTypedQr(source, screenId){
+  const input = document.querySelector(`#${screenId} .rg-qr-manual`);
+  const value = (input?.value || '').trim();
+  if(!value) return toast('Scan, upload, or enter a QR code first.', true);
+  lastScannedQrCode = value;
+  setQrStatus(source, 'Verifying QR...');
+  await completeQrScan(source);
+}
+
+async function startQrCamera(source){
+  const screenId = qrScreenId(source);
+  const screen = document.getElementById(screenId);
+  const video = screen?.querySelector('.rg-qr-video');
+  const canvas = screen?.querySelector('.rg-qr-canvas');
+  if(!video) return;
+  try {
+    stopQrCamera();
+    qrCameraStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    video.srcObject = qrCameraStream;
+    video.style.display = 'block';
+    setQrStatus(source, 'Camera active. Point it at the student QR.');
+    await video.play();
+    const detector = 'BarcodeDetector' in window ? new BarcodeDetector({formats:['qr_code']}) : null;
+    if(!detector && !window.jsQR) throw new Error('QR scanner library did not load. Check your connection, then refresh the page.');
+    const tick = async () => {
+      try {
+        let value = '';
+        if(detector){
+          try {
+            const codes = await detector.detect(video);
+            value = codes[0]?.rawValue || codes[0]?.rawData || '';
+          } catch(e) {}
+        }
+        if(!value && canvas && video.videoWidth && video.videoHeight) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          const ctx = canvas.getContext('2d', {willReadFrequently:true});
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          value = decodeQrFromCanvas(canvas);
+        }
+        if(value){
+          lastScannedQrCode = value;
+          setDetectedQr(source, value);
+          setQrStatus(source, 'QR detected. Verifying...');
+          stopQrCamera();
+          toast('QR detected');
+          await completeQrScan(source);
+          return;
+        }
+      } catch(e) {}
+      qrScanTimer = requestAnimationFrame(tick);
+    };
+    tick();
+  } catch(err){
+    stopQrCamera();
+    setQrStatus(source, err.message || 'Camera unavailable', true);
+    toast(err.message || 'Camera unavailable', true);
+  }
+}
+
+async function completeQrScan(source){
+  if(source === 'driver') return window.doDriverQrScan();
+  if(source === 'driver_dropoff') return window.doDropoffScan();
+  return window.doGuardScan();
 }
 
 function defaultHomeScreen(){
@@ -693,12 +890,65 @@ function defaultHomeScreen(){
   return 's-dashboard';
 }
 
+async function promptLogin(role){
+  const demoEmails = {
+    driver: 'driver@example.com',
+    guard: 'guard@example.com',
+    parent: 'parent@example.com'
+  };
+  const demoEmail = demoEmails[role] || '';
+  const emailHint = demoEmail ? `\nDemo ${role} email: ${demoEmail}` : '';
+  const email = (window.prompt(`Enter ${role} email${emailHint}`) || '').trim();
+  if (!email) throw new Error('Email is required');
+  const password = (window.prompt('Enter your password\nDemo password: Password123') || '').trim();
+  if (!password) throw new Error('Password is required');
+  const data = await api('auth.php', {method:'POST', body:JSON.stringify({action:'login', email, password})});
+  storeUser(data.user);
+  if (data.user.role === 'driver') {
+    localStorage.setItem('rideguard_driver_id', String(data.user.id));
+  }
+  if (data.user.role === 'guard') {
+    storeGuardId(data.user.id);
+  }
+  return data.user;
+}
+
+async function ensureDriverSession(){
+  const user = currentUser();
+  if (user?.role === 'driver') return user;
+  const driverId = activeDriverId();
+  if (driverId) return {id: driverId, role:'driver'};
+  return await promptLogin('driver');
+}
+
+async function ensureGuardSession(){
+  const user = currentUser();
+  if (user?.role === 'guard') return user;
+  const guardId = activeGuardId();
+  if (guardId) return {id: guardId, role:'guard'};
+  return await promptLogin('guard');
+}
+
 function roleUser(defaultId){
   const stored = currentUser();
-  if(stored?.id) return stored;
-  if(document.getElementById('s-driver-dash')) return {id:activeDriverId(), role:'driver'};
-  if(document.getElementById('s-guard-dash')) return {id:4, role:'guard'};
-  return defaultId ? {id:defaultId, role:'parent'} : null;
+  if (document.getElementById('s-driver-dash')) {
+    if (stored?.role === 'driver') return stored;
+    const driverId = activeDriverId();
+    return driverId ? {id: driverId, role: 'driver'} : null;
+  }
+  if (document.getElementById('s-guard-dash')) {
+    if (stored?.role === 'guard') return stored;
+    const guardId = activeGuardId();
+    return guardId ? {id: guardId, role: 'guard'} : null;
+  }
+  if (stored?.id) return stored;
+  return null;
+}
+
+async function resolvedRoleUser(){
+  if (document.getElementById('s-driver-dash')) return await ensureDriverSession();
+  if (document.getElementById('s-guard-dash')) return await ensureGuardSession();
+  return currentUser();
 }
 
 function renderAlerts(notifications){
@@ -722,7 +972,7 @@ function renderAlerts(notifications){
 
 async function openAlerts(navigate = true){
   ensureUtilityScreens();
-  const user = roleUser(1);
+  const user = await resolvedRoleUser();
   if(!user?.id) return toast('Login first to view alerts', true);
   if(navigate){
     renderAlerts([]);
@@ -734,6 +984,22 @@ async function openAlerts(navigate = true){
   }
   const data = await api(`notifications.php?user_id=${encodeURIComponent(user.id)}`);
   renderAlerts(data.notifications || []);
+}
+
+async function openParentTripHistory(navigate = true){
+  ensureUtilityScreens();
+  if(!document.getElementById('s-parent-trip-history')) return;
+  const user = currentUser();
+  if(!user?.id) return toast('Login first to view trip history', true);
+  if(navigate){
+    const screen = document.querySelector('#s-parent-trip-history .scroll-content');
+    if(screen) screen.innerHTML = '<h2 style="font-size:22px;font-weight:800;color:var(--blue2);margin-bottom:14px">Trip History</h2><div class="rg-muted-state">Loading trips...</div>';
+    window._rgOpeningUtility = true;
+    go('s-parent-trip-history');
+    window._rgOpeningUtility = false;
+  }
+  const trips = await loadParentTrips();
+  renderParentTripHistory(trips);
 }
 
 async function markAlertReadAndRefresh(notificationId){
@@ -859,7 +1125,7 @@ function renderProfile(profile, editMode = ''){
 }
 
 async function saveParentProfile(){
-  const user = roleUser(1);
+  const user = roleUser();
   if(!user?.id) return toast('Login first to update profile', true);
   const payload = {
     user_id:user.id,
@@ -883,7 +1149,7 @@ async function saveParentProfile(){
 }
 
 async function openParentProfileEditor(){
-  const user = roleUser(1);
+  const user = roleUser();
   if(!user?.id) return toast('Login first to update profile', true);
   renderProfile(await loadProfile(user.id), 'parent');
 }
@@ -941,7 +1207,7 @@ async function openDriverProfileEditor(mode = 'menu'){
 
 async function openProfile(navigate = true){
   ensureUtilityScreens();
-  const user = roleUser(1);
+  const user = await resolvedRoleUser();
   if(!user?.id) return toast('Login first to view profile', true);
   if(navigate){
     const screen = document.querySelector('#s-profile .scroll-content');
@@ -956,17 +1222,29 @@ async function openProfile(navigate = true){
 function removeTrackNavItems(){
   document.querySelectorAll('.nav-item').forEach(item=>{
     const label = item.querySelector('.nav-label')?.textContent.trim().toLowerCase();
-    if(label === 'track') item.remove();
+    if(label === 'track'){
+      if(document.getElementById('s-dashboard') && !document.getElementById('s-driver-dash') && !document.getElementById('s-guard-dash')){
+        item.setAttribute('onclick', 'openParentTripHistory()');
+        const svg = item.querySelector('svg');
+        if(svg) svg.outerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 5h16M4 12h16M4 19h10" stroke="#999" stroke-width="2" stroke-linecap="round"/><path d="M17 16v3l2 1" stroke="#999" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        const navLabel = item.querySelector('.nav-label');
+        if(navLabel) navLabel.textContent = 'Trip History';
+      } else {
+        item.remove();
+      }
+    }
   });
 }
 
 function bindUtilityNav(){
   if(window._rideguardUtilityNavBound) return;
   window._rideguardUtilityNavBound = true;
+  const hasParentNav = document.getElementById('s-dashboard') && !document.getElementById('s-driver-dash') && !document.getElementById('s-guard-dash');
   document.querySelectorAll('.nav-item').forEach(item=>{
     const label = item.textContent.trim().toLowerCase();
     if(label === 'alerts') item.setAttribute('data-rg-nav', 'alerts');
     if(label === 'profile') item.setAttribute('data-rg-nav', 'profile');
+    if(hasParentNav && (label === 'history' || label === 'trip history')) item.setAttribute('data-rg-nav', 'history');
   });
   document.addEventListener('click', event=>{
     const item = event.target.closest('.nav-item');
@@ -982,11 +1260,17 @@ function bindUtilityNav(){
       event.stopPropagation();
       openProfile().catch(err=>toast(err.message,true));
     }
+    if(hasParentNav && (label === 'history' || label === 'trip history')){
+      event.preventDefault();
+      event.stopPropagation();
+      openParentTripHistory().catch(err=>toast(err.message,true));
+    }
   }, true);
 }
 
 window.openAlerts = openAlerts;
 window.openProfile = openProfile;
+window.openParentTripHistory = openParentTripHistory;
 window.sendAlert = sendAlert;
 window.saveParentProfile = saveParentProfile;
 window.saveDriverProfile = saveDriverProfile;
@@ -1046,11 +1330,11 @@ function renderScheduleScreen(children = currentUser()?.children || []){
     <input id="pickupTime" class="input-field" type="time" value="${localStorage.getItem('rideguard_pickup_time') || '07:30'}" style="margin-bottom:16px">
     <p style="font-size:13px;font-weight:700;color:var(--text2);margin-bottom:12px">Select Trip Type</p>
     <div style="display:flex;flex-direction:column;gap:12px">
-      <div class="card trip-type-card" data-trip-type="home_to_school" style="display:flex;align-items:center;gap:14px;cursor:pointer;border-color:${selectedTripType === 'home_to_school' ? 'var(--blue2)' : 'var(--border)'}">
+      <div class="card trip-type-card ${selectedTripType === 'home_to_school' ? 'selected' : ''}" data-trip-type="home_to_school" style="display:flex;align-items:center;gap:14px;cursor:pointer">
         <div style="width:42px;height:42px;background:#dbeafe;border-radius:50%;display:flex;align-items:center;justify-content:center"></div>
         <div><div style="font-size:15px;font-weight:800">Home to School</div><div style="font-size:12px;color:var(--text2)">Morning pickup</div></div>
       </div>
-      <div class="card trip-type-card" data-trip-type="school_to_home" style="display:flex;align-items:center;gap:14px;cursor:pointer;border-color:${selectedTripType === 'school_to_home' ? 'var(--blue2)' : 'var(--border)'}">
+      <div class="card trip-type-card ${selectedTripType === 'school_to_home' ? 'selected' : ''}" data-trip-type="school_to_home" style="display:flex;align-items:center;gap:14px;cursor:pointer">
         <div style="width:42px;height:42px;background:#f3e8ff;border-radius:50%;display:flex;align-items:center;justify-content:center"></div>
         <div><div style="font-size:15px;font-weight:800">School to Home</div><div style="font-size:12px;color:var(--text2)">Afternoon pickup</div></div>
       </div>
@@ -1058,7 +1342,8 @@ function renderScheduleScreen(children = currentUser()?.children || []){
   `;
   document.querySelectorAll('.trip-type-card').forEach(card=>{
     card.addEventListener('click',()=>{
-      selectedTripType = card.dataset.tripType;
+      const tripType = card.dataset.tripType;
+      setSelectedTripType(tripType);
       localStorage.setItem('rideguard_pickup_time', document.getElementById('pickupTime')?.value || '07:30');
       go('s-select-driver');
     });
@@ -1077,7 +1362,7 @@ function renderConfirmSchedule(){
       <div style="font-size:14px;font-weight:700;margin-bottom:14px">Confirm Schedule</div>
       <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0"><span style="font-size:14px;color:var(--text2)">Child</span><span style="font-size:14px;font-weight:700">${childName(child)}</span></div>
       <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0"><span style="font-size:14px;color:var(--text2)">Trip Type</span><span style="font-size:14px;font-weight:700">${tripLabel(selectedTripType)}</span></div>
-      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0"><span style="font-size:14px;color:var(--text2)">Driver</span><span style="font-size:14px;font-weight:700">${driver.name}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f0f0"><span style="font-size:14px;color:var(--text2)">Driver</span><span style="font-size:14px;font-weight:700">${driver?.name || 'Select a driver'}</span></div>
       <div style="display:flex;justify-content:space-between;padding:10px 0"><span style="font-size:14px;color:var(--text2)">Pickup Time</span><span style="font-size:14px;font-weight:700">${formatTime(time)}</span></div>
     `;
   }
@@ -1090,7 +1375,10 @@ function renderDriverSelection(drivers = []){
     list.innerHTML = '<div class="rg-muted-state">No available drivers yet.</div>';
     return;
   }
-  list.innerHTML = drivers.map(driver=>{
+  const maxVisibleDrivers = 3;
+  const visibleDrivers = drivers.slice(0, maxVisibleDrivers);
+  const hiddenCount = Math.max(0, drivers.length - visibleDrivers.length);
+  list.innerHTML = visibleDrivers.map(driver=>{
     const name = driverDisplayName(driver);
     const vehicle = `${driver.make || ''} ${driver.model || ''}`.trim() || 'Vehicle not set';
     return `
@@ -1110,7 +1398,10 @@ function renderDriverSelection(drivers = []){
       </div>
     `;
   }).join('');
-  bindDriverSelection(drivers);
+  if(hiddenCount){
+    list.innerHTML += `<div class="rg-muted-state" style="margin-top:12px">Showing ${visibleDrivers.length} of ${drivers.length} drivers to keep the page compact.</div>`;
+  }
+  bindDriverSelection(visibleDrivers);
 }
 
 function bindDriverSelection(drivers = []){
@@ -1130,6 +1421,7 @@ function bindDriverSelection(drivers = []){
 async function scheduleTrip(){
   const {user, child} = requireParentContext();
   const driver = selectedDriver();
+  if(!driver || !driver.id) throw new Error('Select a driver before scheduling the trip');
   const pickupTime = localStorage.getItem('rideguard_pickup_time') || document.getElementById('pickupTime')?.value || '07:30';
   const recurring = document.querySelector('#s-confirm-schedule input[type="checkbox"]')?.checked ? 1 : 0;
   const data = await api('trips.php', {method:'POST', body:JSON.stringify({
@@ -1209,13 +1501,129 @@ function initLeafletMap(){
   L.marker(school).addTo(parentMap).bindPopup('School');
 }
 
+function stopDriverRouteWatch(){
+  if(driverWatchId !== null && navigator.geolocation){
+    navigator.geolocation.clearWatch(driverWatchId);
+    driverWatchId = null;
+  }
+  if(driverSimId !== null){
+    clearInterval(driverSimId);
+    driverSimId = null;
+  }
+}
+
+function getDriverRoutePoints(trip){
+  const schoolCoords = trip.school_latitude && trip.school_longitude
+    ? [Number(trip.school_latitude), Number(trip.school_longitude)]
+    : [10.3157, 123.9054];
+  const homeCoords = [10.3270, 123.8850];
+  return trip.trip_type === 'school_to_home' ? [schoolCoords, homeCoords] : [homeCoords, schoolCoords];
+}
+
+function formatDriverEta(distanceKm){
+  const minutes = Math.max(1, Math.round(distanceKm / 0.35));
+  return `${minutes} min`;
+}
+
+function haversineDistance([lat1, lng1], [lat2, lng2]){
+  const toRad = v => v * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2) * Math.sin(dLng/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return 6371 * c;
+}
+
+function updateDriverEta(latlng){
+  if(!driverRouteDestination) return;
+  const distanceKm = haversineDistance(latlng, driverRouteDestination);
+  const etaEl = document.getElementById('driverEta');
+  if(etaEl) etaEl.textContent = formatDriverEta(distanceKm);
+}
+
+function updateDriverMarker(latlng){
+  if(!driverMap) return;
+  if(!driverMarker){
+    driverMarker = L.circleMarker(latlng, {radius:8, color:'#2563eb', fillColor:'#3b82f6', fillOpacity:1}).addTo(driverMap);
+  } else {
+    driverMarker.setLatLng(latlng);
+  }
+  if(driverMap.getBounds && !driverMap.getBounds().contains(latlng)){
+    driverMap.panTo(latlng);
+  }
+  updateDriverEta(latlng);
+}
+
+function simulateDriverMovement(points){
+  if(driverSimId !== null) clearInterval(driverSimId);
+  const [start, end] = points;
+  const steps = 20;
+  let step = 0;
+  driverSimId = setInterval(() => {
+    if(step > steps){
+      clearInterval(driverSimId);
+      driverSimId = null;
+      return;
+    }
+    const lat = start[0] + ((end[0] - start[0]) * step / steps);
+    const lng = start[1] + ((end[1] - start[1]) * step / steps);
+    updateDriverMarker([lat, lng]);
+    step += 1;
+  }, 1800);
+}
+
+function initDriverMap(trip){
+  const el = document.getElementById('driverLeafletMap');
+  if(!el || typeof L === 'undefined') {
+    if(el) el.innerHTML = '<div class="rg-muted-state" style="margin:20px">Map unavailable offline. Driver navigation is paused.</div>';
+    return;
+  }
+  stopDriverRouteWatch();
+  if(driverMap) driverMap.remove();
+  el.innerHTML = '';
+  driverMap = L.map(el, {zoomControl:false, attributionControl:false});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(driverMap);
+  const routePoints = getDriverRoutePoints(trip);
+  const [start, end] = routePoints;
+  driverRoutePolyline = L.polyline(routePoints, {color:'#1d8cf8', weight:5, opacity:0.9}).addTo(driverMap);
+  L.circleMarker(start, {radius:8, color:'#065f46', fillColor:'#22c55e', fillOpacity:1}).addTo(driverMap).bindTooltip(trip.trip_type === 'school_to_home' ? 'Home pickup' : 'School', {permanent:false});
+  L.circleMarker(end, {radius:8, color:'#1d4ed8', fillColor:'#93c5fd', fillOpacity:1}).addTo(driverMap).bindTooltip(trip.trip_type === 'school_to_home' ? 'School dropoff' : 'Home dropoff', {permanent:false});
+  driverMarker = L.circleMarker(start, {radius:7, color:'#1d4ed8', fillColor:'#2563eb', fillOpacity:1}).addTo(driverMap).bindPopup('Your vehicle');
+  driverRouteDestination = end;
+  driverMap.fitBounds(driverRoutePolyline.getBounds().pad(0.2));
+  if(navigator.geolocation){
+    driverWatchId = navigator.geolocation.watchPosition(position => {
+      updateDriverMarker([position.coords.latitude, position.coords.longitude]);
+    }, () => {
+      simulateDriverMovement(routePoints);
+    }, {enableHighAccuracy:true, maximumAge:10000, timeout:10000});
+  } else {
+    simulateDriverMovement(routePoints);
+  }
+}
+
+async function showActiveTripMap(){
+  const tripId = Number(localStorage.getItem('rideguard_driver_trip_id') || 0);
+  if(!tripId) return toast('No active trip selected', true);
+  const trips = await loadDriverTrips(activeDriverId());
+  const trip = trips.find(t => Number(t.id) === tripId) || trips[0];
+  if(!trip) return toast('Active trip not found', true);
+  const nextStopEl = document.getElementById('driverNextStop');
+  const tripEnd = trip.trip_type === 'school_to_home' ? 'Home drop-off' : 'School drop-off';
+  if(nextStopEl) nextStopEl.textContent = tripEnd;
+  const routePoints = getDriverRoutePoints(trip);
+  driverRouteDestination = routePoints[routePoints.length - 1];
+  initDriverMap(trip);
+}
+
 async function refreshDriverView(){
   if(!document.getElementById('s-driver-dash')) return;
   renderDriverDashboard([]);
   removeTrackNavItems();
   renderDriverRequest([]);
   try {
-    const [trips, profile] = await Promise.all([loadDriverTrips(activeDriverId()), loadProfile(activeDriverId()).catch(()=>null)]);
+    const driver = await ensureDriverSession();
+    const [trips, profile] = await Promise.all([loadDriverTrips(driver.id), loadProfile(driver.id).catch(()=>null)]);
     renderDriverDashboard(trips, profile);
     removeTrackNavItems();
     renderDriverRequest(trips);
@@ -1228,6 +1636,8 @@ function renderDriverDashboard(trips, profile = null){
   const screen = document.querySelector('#s-driver-dash .scroll-content');
   if(!screen) return;
   const active = trips.filter(t=>['pending','accepted','qr_verified','in_progress'].includes(t.status));
+  const visibleActive = active.slice(0, 2);
+  const hiddenActiveCount = Math.max(0, active.length - visibleActive.length);
   const driver = profile?.driver_profile || {};
   const name = profile ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim() : 'Driver';
   const vehicle = `${driver.make || 'Vehicle'} ${driver.model || ''}`.trim();
@@ -1250,14 +1660,15 @@ function renderDriverDashboard(trips, profile = null){
       </div>
     </div>
     <div class="card card-shadow">
-      <div style="font-size:14px;font-weight:800;margin-bottom:12px">Trip Requests</div>
-      ${active.length ? active.map(t=>`
-        <div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="font-size:14px;font-weight:800">Trip Requests</div>
+        ${hiddenActiveCount ? '<button class="rg-small-btn" onclick="go(\'s-trip-records\')">All</button>' : ''}
+      </div>
+      ${visibleActive.length ? visibleActive.map(t=>`
+        <div style="border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px">
           <div style="display:flex;justify-content:space-between;gap:10px"><div style="font-size:14px;font-weight:800">${t.student_first_name} ${t.student_last_name}</div>${statusBadge(t.status)}</div>
           <div style="font-size:12px;color:var(--text2);margin-top:4px">${tripLabel(t.trip_type)} at ${formatTime(t.pickup_time)}</div>
-          <div style="font-size:12px;color:#22c55e;margin-top:2px">${t.pickup_address}</div>
-          <div style="font-size:12px;color:#ef4444">${t.dropoff_address}</div>
-          <button class="btn btn-blue" style="margin-top:10px;padding:11px;font-size:13px" onclick="openDriverTrip(${Number(t.id)})">${t.status === 'pending' ? 'View Request' : 'Continue Trip'}</button>
+          <button class="btn btn-blue" style="margin-top:8px;padding:10px;font-size:13px" onclick="openDriverTrip(${Number(t.id)})">${t.status === 'pending' ? 'View Request' : 'Continue Trip'}</button>
         </div>`).join('') : '<div class="rg-muted-state">No pending trip requests.</div>'}
     </div>
   `;
@@ -1305,21 +1716,36 @@ async function acceptDriverTrip(tripId){
 }
 
 async function scanStudent(source){
-  const tripId = Number(localStorage.getItem(source === 'driver' ? 'rideguard_driver_trip_id' : 'rideguard_trip_id') || 0);
-  let studentId = selectedChild()?.id;
-  if(source === 'driver' && tripId){
-    const trips = await loadDriverTrips(activeDriverId());
-    studentId = trips.find(t=>Number(t.id) === tripId)?.student_id;
+  if (source === 'driver' && !activeDriverId()) {
+    await ensureDriverSession();
   }
-  if(!studentId) throw new Error('Missing child for this scan');
-  await api('scans.php', {method:'POST', body:JSON.stringify({
-    student_id:studentId,
-    guard_id:source === 'guard' ? (roleUser()?.id || null) : null,
-    trip_id:tripId || null,
-    phase:source === 'guard' ? 'school_to_home' : (source === 'driver_dropoff' ? 'dropoff' : 'home_to_school'),
-    result:'verified'
-  })});
-  toast('QR scan logged');
+  if (source === 'guard' && !activeGuardId()) {
+    await ensureGuardSession();
+  }
+
+  const tripId = Number(localStorage.getItem(source === 'driver' || source === 'driver_dropoff' ? 'rideguard_driver_trip_id' : 'rideguard_trip_id') || 0);
+
+  let qrCode = lastScannedQrCode || '';
+  if (source === 'guard' || source === 'driver' || source === 'driver_dropoff') {
+    qrCode = qrCode || (window.prompt('Scan or enter student QR code') || '').trim();
+    if (!qrCode) throw new Error('No QR code provided');
+  }
+  lastScannedQrCode = '';
+
+  const payload = {
+    student_id: null,
+    qr_code: qrCode || null,
+    guard_id: source === 'guard' ? (currentUser()?.role === 'guard' ? currentUser().id : activeGuardId() || null) : null,
+    trip_id: tripId || null,
+    phase: source === 'guard' ? currentScanPhase() : 'home_to_school',
+    result: 'verified'
+  };
+
+  const res = await api('scans.php', {method:'POST', body:JSON.stringify(payload)});
+  if (res && res.ok === false) throw new Error(res.error || 'Scan failed');
+  setQrStatus(source, 'QR verified successfully.');
+  toast('QR verified');
+  return res;
 }
 
 async function submitRating(){
@@ -1340,8 +1766,9 @@ async function submitRating(){
 }
 
 async function driverStatus(){
+  const driver = await ensureDriverSession();
   const isOnline = !document.getElementById('driverToggle')?.classList.contains('off');
-  await api('drivers.php', {method:'PATCH', body:JSON.stringify({driver_id:activeDriverId(), is_online:isOnline ? 1 : 0})});
+  await api('drivers.php', {method:'PATCH', body:JSON.stringify({driver_id:driver.id, is_online:isOnline ? 1 : 0})});
   toast(isOnline ? 'Driver is online' : 'Driver is offline');
 }
 
@@ -1363,7 +1790,11 @@ async function refreshGuardScans(){
   if(!list) return;
   try {
     const guard = roleUser();
-    const guardId = guard?.id || '';
+    const guardId = guard?.id || 0;
+    if (!guardId) {
+      list.innerHTML = '<div class="rg-muted-state">Login as a guard to view scans.</div>';
+      return;
+    }
     const data = await api(`scans.php?guard_id=${encodeURIComponent(guardId)}`).catch(()=>({scans:[]}));
     const scans = data.scans || [];
     if(!scans.length){
@@ -1391,6 +1822,23 @@ async function refreshGuardScans(){
   }
 }
 
+async function refreshGuardHistory(){
+  const list = document.querySelector('#s-guard-history .scroll-content');
+  if(!list) return;
+  try {
+    const guard = roleUser();
+    const guardId = guard?.id || 0;
+    if(!guardId){
+      list.innerHTML = '<div class="rg-muted-state">Login as a guard to view trip history.</div>';
+      return;
+    }
+    const data = await api(`scans.php?guard_id=${encodeURIComponent(guardId)}`).catch(()=>({scans:[]}));
+    renderGuardTripHistory(data.scans || []);
+  } catch(err){
+    list.innerHTML = '<div class="rg-muted-state">Could not load guard trip history.</div>';
+  }
+}
+
 
 // ── Named action handlers called directly from onclick ────────────────────────
 
@@ -1415,7 +1863,18 @@ window.doSubmitRating = async function(){
 };
 
 window.doDriverQrScan = async function(){
-  try { await scanStudent('driver'); go('s-qr-success'); } catch(err){ toast(err.message, true); }
+  try {
+    const res = await scanStudent('driver');
+    // after successful scan, refresh trips to pick up student name
+    const trips = await loadDriverTrips(activeDriverId());
+    const tripId = Number(localStorage.getItem('rideguard_driver_trip_id') || 0);
+    const trip = trips.find(t=>Number(t.id) === tripId) || trips[0];
+    if(trip) {
+      lastDriverChildName = `${trip.student_first_name} ${trip.student_last_name}`;
+      localStorage.setItem('rideguard_trip_id', String(trip.id));
+    }
+    go('s-qr-success');
+  } catch(err){ setQrStatus('driver', err.message || 'QR verification failed.', true); toast(err.message, true); }
 };
 
 window.doStartTrip = async function(){
@@ -1435,7 +1894,7 @@ window.doDropoffScan = async function(){
     const nameEl = document.getElementById('dropoffStudentName');
     if(nameEl && trip) nameEl.textContent = `${trip.student_first_name} ${trip.student_last_name} confirmed at destination`;
     go('s-qr-dropoff-success');
-  } catch(err){ toast(err.message, true); }
+  } catch(err){ setQrStatus('driver_dropoff', err.message || 'QR verification failed.', true); toast(err.message, true); }
 };
 
 window.doCompleteTrip = async function(){
@@ -1447,15 +1906,38 @@ window.doCompleteTrip = async function(){
 };
 
 window.doGuardScan = async function(){
-  try { await scanStudent('guard'); go('s-guard-scans'); } catch(err){ toast(err.message, true); }
+  try { await scanStudent('guard'); go('s-guard-scans'); } catch(err){ setQrStatus('guard', err.message || 'QR verification failed.', true); toast(err.message, true); }
+};
+
+window.guardLogin = async function(){
+  try {
+    await ensureGuardSession();
+    go('s-guard-dash');
+  } catch (err) {
+    toast(err.message, true);
+  }
 };
 
 document.addEventListener('DOMContentLoaded',function(){
   ensureUtilityScreens();
+  replaceBrandLogos();
   removeTrackNavItems();
+  ensureQrScannerControls();
+  renderQrCodes();
   originalRegisterStepTwo = document.querySelector('#s-reg2 div[style*="overflow-y:auto"]')?.innerHTML || '';
   bindDriverSelection();
   bindUtilityNav();
+
+  // Normalize driver bottom nav across driver pages
+  if(document.getElementById('s-driver-dash')){
+    document.querySelectorAll('.nav-bar').forEach(nav=>{
+      nav.innerHTML = `
+        <div class="nav-item" onclick="go('s-trip-records')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 13h7v8H3z" stroke="var(--blue2)" stroke-width="1.6"/><path d="M14 3h7v18h-7z" stroke="var(--blue2)" stroke-width="1.6"/></svg><span class="nav-label">Trip Records</span></div>
+        <div class="nav-item" onclick="go('s-trip-request')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 8h18v2H3z" stroke="#999" stroke-width="1.6"/><path d="M3 12h18v2H3z" stroke="#999" stroke-width="1.6"/></svg><span class="nav-label">Requests</span></div>
+        <div class="nav-item" onclick="openProfile()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#999" stroke-width="2"/><circle cx="12" cy="7" r="4" stroke="#999" stroke-width="2"/></svg><span class="nav-label">Profile</span></div>
+      `;
+    });
+  }
 
   if(document.getElementById('s-dashboard')) refreshParentView().catch(()=>{});
   if(document.getElementById('s-driver-dash')) refreshDriverView();

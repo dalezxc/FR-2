@@ -5,7 +5,7 @@ declare(strict_types=1);
 const DB_HOST = '127.0.0.1';
 const DB_NAME = 'rideguard';
 const DB_USER = 'root';
-const DB_PASS = 'dbsys31';
+const DB_PASS = 'imdbsys31';
 const DB_CHARSET = 'utf8mb4';
 
 function db(): PDO

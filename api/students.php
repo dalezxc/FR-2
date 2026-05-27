@@ -6,13 +6,23 @@ require_once __DIR__ . '/bootstrap.php';
 
 try {
     if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        if ((int) value($_GET, 'latest', 0) === 1) {
+            $stmt = db()->query('
+                SELECT id, first_name, last_name, age, date_of_birth, grade_level, school_name, qr_code
+                FROM students
+                ORDER BY id DESC
+                LIMIT 1
+            ');
+            respond(['ok' => true, 'child' => $stmt->fetch() ?: null]);
+        }
+
         $parentId = (int) value($_GET, 'parent_id', 0);
         if (!$parentId) {
             respond(['ok' => false, 'error' => 'Missing parent'], 422);
         }
 
         $stmt = db()->prepare('
-            SELECT id, first_name, last_name, age, date_of_birth, grade_level, school_name
+            SELECT id, first_name, last_name, age, date_of_birth, grade_level, school_name, qr_code
             FROM students
             WHERE parent_id = ?
             ORDER BY id ASC
@@ -82,6 +92,7 @@ try {
             'date_of_birth' => $dateOfBirth ?: null,
             'grade_level' => $gradeLevel,
             'school_name' => $schoolName,
+            'qr_code' => $qrCode,
         ],
     ]);
 } catch (Throwable $e) {
